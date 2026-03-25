@@ -872,7 +872,6 @@ function CustomerDashboard({user,onLogout,onBrowse,initialLead=null}) {
               />
             </div>
           ):(
-          ):(
             <div style={{maxWidth:820,margin:'0 auto',padding:'28px 24px 60px'}}>
               <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.6rem',color:'var(--forest)',fontWeight:400,marginBottom:4}}>My Quote Requests</div>
               <p style={{color:'var(--light)',fontSize:'0.82rem',marginBottom:24}}>Your conversations grouped by vendor category.</p>

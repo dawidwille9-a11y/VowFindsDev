@@ -2878,36 +2878,81 @@ function GlobalStyles(){return(
       /* Nav */
       .vf-nav-login-btns{display:none!important;}
 
-      /* Hero — restored to original sizing */
-      .vf-hero-padding{padding:52px 24px 48px!important;}
-      .vf-hero-headline{font-size:clamp(2.2rem,4vw,3.6rem)!important;}
-      .vf-search-box{padding:28px 32px!important;border-radius:20px!important;}
-      .vf-search-grid{grid-template-columns:1fr!important;gap:14px!important;}
-      .vf-filter-box{padding:12px 14px!important;}
-      .vf-filter-pill{padding:6px 13px!important;font-size:0.82rem!important;}
+      /* Hero */
+      .vf-hero-padding{padding:36px 16px 28px!important;}
+      .vf-hero-headline{font-size:1.75rem!important;margin-bottom:8px!important;}
 
-      /* Vendor cards — 3 per row, sized to fit */
-      .vf-lane-scroll{gap:8px!important;padding:0 12px 12px!important;}
-      .vf-vendor-card{
-        flex:0 0 calc(33vw - 10px)!important;
-        width:calc(33vw - 10px)!important;
-        border-radius:10px!important;
+      /* Search box — tighter, single column, z-index so date picker floats above filter */
+      .vf-search-box{
+        padding:18px 16px 20px!important;
+        border-radius:16px!important;
+        margin-bottom:14px!important;
+        position:relative!important;
+        z-index:10!important;
       }
-      /* Shrink card internals to fit the smaller size */
-      .vf-vendor-card .vf-card-img{height:90px!important;}
-      .vf-vendor-card .vf-card-body{padding:8px 9px 10px!important;}
-      .vf-vendor-card .vf-card-name{font-size:0.78rem!important;margin-bottom:2px!important;}
-      .vf-vendor-card .vf-card-location{font-size:0.62rem!important;margin-bottom:6px!important;}
-      .vf-vendor-card .vf-card-pricing{padding:6px 8px!important;}
-      .vf-vendor-card .vf-card-pricing div{font-size:0.62rem!important;}
-      .vf-vendor-card .vf-card-pricing span{font-size:0.68rem!important;}
-      .vf-vendor-card .vf-card-btns{margin-top:8px!important;gap:4px!important;}
-      .vf-vendor-card .vf-card-btns button{padding:6px 4px!important;font-size:0.62rem!important;border-radius:6px!important;}
-      .vf-vendor-card .vf-card-type-badge{font-size:0.55rem!important;padding:2px 6px!important;}
-      .vf-vendor-card .vf-card-ig{width:22px!important;height:22px!important;font-size:0.58rem!important;}
+      .vf-search-grid{grid-template-columns:1fr!important;gap:10px!important;margin-bottom:12px!important;}
+      .vf-search-grid input[type=date]{
+        font-size:0.88rem!important;
+        padding:10px 12px!important;
+        position:relative!important;
+        z-index:20!important;
+      }
+      /* Filter box sits BELOW with lower z-index so date picker overlaps it */
+      .vf-filter-box{
+        padding:10px 12px!important;
+        position:relative!important;
+        z-index:1!important;
+      }
+      .vf-filter-pill{padding:5px 11px!important;font-size:0.78rem!important;}
 
-      /* Results */
-      .vf-results-header{padding:0 12px 14px!important;}
+      /* Vendor lane — 2 cards visible, peek of 3rd */
+      .vf-lane-scroll{
+        gap:10px!important;
+        padding:0 16px 14px!important;
+        scroll-snap-type:x mandatory!important;
+      }
+      /* Cards: ~2.3 fit on screen so user can see there's more to scroll */
+      .vf-vendor-card{
+        flex:0 0 calc(44vw - 8px)!important;
+        width:calc(44vw - 8px)!important;
+        border-radius:12px!important;
+        scroll-snap-align:start!important;
+      }
+      .vf-vendor-card .vf-card-img{height:110px!important;}
+      .vf-vendor-card .vf-card-body{padding:10px 11px 12px!important;}
+      .vf-vendor-card .vf-card-name{
+        font-size:0.88rem!important;
+        margin-bottom:2px!important;
+        white-space:nowrap!important;
+        overflow:hidden!important;
+        text-overflow:ellipsis!important;
+      }
+      .vf-vendor-card .vf-card-location{
+        font-size:0.68rem!important;
+        margin-bottom:7px!important;
+        white-space:nowrap!important;
+        overflow:hidden!important;
+        text-overflow:ellipsis!important;
+      }
+      .vf-vendor-card .vf-card-pricing{padding:7px 9px!important;border-radius:7px!important;}
+      .vf-vendor-card .vf-card-pricing div{font-size:0.65rem!important;}
+      .vf-vendor-card .vf-card-pricing span{font-size:0.72rem!important;}
+      .vf-vendor-card .vf-card-btns{margin-top:9px!important;gap:5px!important;}
+      .vf-vendor-card .vf-card-btns button{
+        padding:7px 6px!important;
+        font-size:0.68rem!important;
+        border-radius:7px!important;
+        letter-spacing:0!important;
+      }
+      .vf-vendor-card .vf-card-type-badge{
+        font-size:0.58rem!important;
+        padding:2px 7px!important;
+        letter-spacing:0.06em!important;
+      }
+      .vf-vendor-card .vf-card-ig{width:24px!important;height:24px!important;}
+
+      /* Results section */
+      .vf-results-header{padding:0 16px 14px!important;}
       .vf-results-title{font-size:1.5rem!important;}
 
       /* Vendor detail */

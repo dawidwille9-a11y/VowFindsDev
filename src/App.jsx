@@ -2686,25 +2686,27 @@ function GlobalStyles(){return(
     /* ── Responsive ── */
     @media(max-width:767px){
       .vf-nav-login-btns{display:none!important;}
-      .vf-hero-padding{padding:32px 16px 28px!important;}
-      .vf-hero-headline{font-size:1.9rem!important;}
+      .vf-hero-padding{padding:20px 14px 18px!important;}
+      .vf-hero-headline{font-size:1.45rem!important;margin-bottom:6px!important;line-height:1.2!important;}
       .vf-hero-sub{display:none!important;}
-      .vf-search-box{padding:18px 16px!important;border-radius:14px!important;}
-      .vf-search-grid{grid-template-columns:1fr!important;gap:10px!important;}
-      .vf-filter-box{padding:10px 12px!important;}
-      .vf-filter-pills{gap:6px!important;}
-      .vf-filter-pill{padding:5px 10px!important;font-size:0.75rem!important;}
-      .vf-lane-scroll{gap:12px!important;padding:0 16px 12px!important;}
-      .vf-vendor-card{flex:0 0 260px!important;width:260px!important;}
-      .vf-results-header{padding:0 16px 16px!important;}
-      .vf-results-title{font-size:1.4rem!important;}
+      .vf-search-box{padding:14px 13px!important;border-radius:12px!important;margin-bottom:10px!important;}
+      .vf-search-grid{grid-template-columns:1fr!important;gap:8px!important;margin-bottom:10px!important;}
+      .vf-search-box label{font-size:0.6rem!important;margin-bottom:3px!important;}
+      .vf-search-box input{padding:9px 11px!important;font-size:0.85rem!important;border-radius:7px!important;}
+      .vf-search-box button{padding:10px!important;font-size:0.85rem!important;border-radius:8px!important;}
+      .vf-filter-box{padding:8px 10px!important;border-radius:10px!important;gap:5px!important;}
+      .vf-filter-pill{padding:4px 9px!important;font-size:0.72rem!important;}
+      .vf-lane-scroll{gap:10px!important;padding:0 14px 10px!important;}
+      .vf-vendor-card{flex:0 0 240px!important;width:240px!important;}
+      .vf-results-header{padding:0 14px 12px!important;}
+      .vf-results-title{font-size:1.3rem!important;}
       .vf-vendor-detail-grid{grid-template-columns:1fr!important;}
       .vf-vendor-detail-sticky{position:static!important;}
-      .vf-vendor-detail-hero{height:220px!important;}
-      .vf-vendor-detail-pad{padding:20px 16px 40px!important;}
-      .vf-hero-sub{margin-bottom:20px!important;}
-      .vf-search-box{margin-bottom:12px!important;}
-      nav button span, nav button svg{pointer-events:none;}
+      .vf-vendor-detail-hero{height:190px!important;}
+      .vf-vendor-detail-pad{padding:16px 14px 36px!important;}
+      nav{height:50px!important;}
+      nav .vf-logo{font-size:1.1rem!important;}
+      nav button{padding:4px 8px!important;font-size:0.7rem!important;}
     }
     @media(min-width:768px){
       .vf-mobile-only{display:none!important;}

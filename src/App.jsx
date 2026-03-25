@@ -714,7 +714,7 @@ function CustomerDashboard({user,onLogout,onBrowse,initialLead=null}) {
   const unread=leads.filter(l=>l.last_message&&l.last_message.sender_role==='vendor').length;
 
   return(
-    <div style={{minHeight:'100vh',background:'var(--cream)',display:'flex',flexDirection:'column'}}>
+    <div className="vf-customer-dash-body" style={{minHeight:'100vh',background:'var(--cream)',display:'flex',flexDirection:'column'}}>
 
       {/* Top bar */}
       <div style={{background:'var(--white)',borderBottom:'1px solid var(--parchment)',padding:'0 20px',height:56,display:'flex',alignItems:'center',justifyContent:'space-between',boxShadow:'0 1px 8px rgba(0,0,0,0.05)',flexShrink:0}}>
@@ -744,11 +744,13 @@ function CustomerDashboard({user,onLogout,onBrowse,initialLead=null}) {
         {/* Sidebar overlay on mobile */}
         {sidebarOpen&&<div onClick={()=>setSidebarOpen(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.3)',zIndex:50}}/>}
 
-        {/* Sidebar */}
+        {/* Sidebar — absolute on mobile so it overlays instead of pushing content right */}
         <div style={{
           width:280,flexShrink:0,background:'var(--white)',borderRight:'1px solid var(--parchment)',
           display:'flex',flexDirection:'column',
-          position:'relative',zIndex:51,
+          position:window.innerWidth<=700?'absolute':'relative',
+          top:0,bottom:0,left:0,
+          zIndex:51,
           transition:'transform 0.25s ease',
           transform:sidebarOpen||window.innerWidth>700?'translateX(0)':'translateX(-100%)',
         }}>
@@ -1365,8 +1367,8 @@ function VendorLane({type,vendors,dateFrom,dateTo,onOpenDetail,isLast,onRequestQ
         </div>
       </div>
       <div style={{position:'relative'}}>
-        <div style={{position:'absolute',top:0,bottom:20,left:0,width:40,background:'linear-gradient(to right,var(--cream),transparent)',zIndex:10,pointerEvents:'none'}}/>
-        <div style={{position:'absolute',top:0,bottom:20,right:0,width:40,background:'linear-gradient(to left,var(--cream),transparent)',zIndex:10,pointerEvents:'none'}}/>
+        <div className="vf-lane-fade-left" style={{position:'absolute',top:0,bottom:20,left:0,width:40,background:'linear-gradient(to right,var(--cream),transparent)',zIndex:10,pointerEvents:'none'}}/>
+        <div className="vf-lane-fade-right" style={{position:'absolute',top:0,bottom:20,right:0,width:40,background:'linear-gradient(to left,var(--cream),transparent)',zIndex:10,pointerEvents:'none'}}/>
         <div style={{display:'flex',gap:20,overflowX:'auto',padding:'4px 32px 20px',scrollbarWidth:'none'}}>
           {vendors.map(v=>{const ok=calcTotal(v)<=maxPrice;const unavail=dateFrom&&(v.unavail_dates||[]).some(d=>{const dd=d.date;return dd>=dateFrom&&(!dateTo||dd<=dateTo);});if(!ok)return null;return<VendorCard key={v.id} vendor={v} unavail={unavail} dateFrom={dateFrom} dateTo={dateTo} onClick={()=>onOpenDetail(v)} onRequestQuote={()=>onRequestQuote&&onRequestQuote(v)} customerId={customerId} onFav={!!customerId}/>;  })}
           {visible.length===0&&<div style={{padding:'24px 0',fontSize:'0.85rem',color:'var(--light)',fontStyle:'italic'}}>No vendors match this price filter.</div>}
@@ -2470,7 +2472,7 @@ function CustomerBrowseView({user,venue,setVenue,venueLatLng,setVenueLatLng,date
 
       {/* Results */}
       {searched&&(
-        <div style={{padding:'32px 0 60px'}}>
+        <div className="vf-results-section" style={{padding:'32px 0 60px'}}>
           <div className="vf-results-header" style={{padding:'0 28px 20px',maxWidth:1200,margin:'0 auto',display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
             <div>
               <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.8rem',fontWeight:400,color:'var(--forest)'}}>Vendors near <span style={{fontStyle:'italic',color:'var(--rose)'}}>{venue}</span>{dateFrom&&<span style={{fontSize:'1.1rem',color:'var(--mid)',fontStyle:'normal'}}> · {formatDateDisplay(dateFrom)}{dateTo&&dateTo!==dateFrom?' – '+formatDateDisplay(dateTo):''}</span>}</h2>
@@ -2843,7 +2845,7 @@ export default function VowFinds() {
 
           {/* Results */}
           {searched&&(
-            <div style={{padding:'48px 0 60px'}}>
+            <div className="vf-results-section" style={{padding:'48px 0 60px'}}>
               <div style={{padding:'0 32px 24px',maxWidth:1200,margin:'0 auto',display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
                 <div>
                   <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'2rem',fontWeight:400,color:'var(--forest)'}}>Vendors near <span style={{fontStyle:'italic',color:'var(--rose)'}}>{venue}</span>{dateFrom&&<span style={{fontSize:'1.2rem',color:'var(--mid)',fontStyle:'normal'}}> · {formatDateDisplay(dateFrom)}{dateTo&&dateTo!==dateFrom?' – '+formatDateDisplay(dateTo):''}</span>}</h2>
@@ -2951,9 +2953,15 @@ function GlobalStyles(){return(
       }
       .vf-vendor-card .vf-card-ig{width:24px!important;height:24px!important;}
 
-      /* Results section */
+      /* Results section — white/cream palette */
+      .vf-results-section{background:#fdfaf7!important;}
+      .vf-lane-fade-left{background:linear-gradient(to right,#fdfaf7,transparent)!important;}
+      .vf-lane-fade-right{background:linear-gradient(to left,#fdfaf7,transparent)!important;}
       .vf-results-header{padding:0 16px 14px!important;}
       .vf-results-title{font-size:1.5rem!important;}
+
+      /* Customer dashboard — full width on mobile, no sidebar layout shift */
+      .vf-customer-dash-body{min-height:100vh!important;}
 
       /* Vendor detail */
       .vf-vendor-detail-grid{grid-template-columns:1fr!important;}

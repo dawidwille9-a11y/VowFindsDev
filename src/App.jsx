@@ -2434,7 +2434,7 @@ function CustomerBrowseView({user,venue,setVenue,venueLatLng,setVenueLatLng,date
         </p>
 
         {/* Search box */}
-        <div className="vf-search-box" style={{background:'var(--white)',borderRadius:20,padding:'28px 32px',width:'100%',maxWidth:780,boxShadow:'0 16px 60px rgba(0,0,0,0.28)',position:'relative',zIndex:2,marginBottom:16}}>
+        <div className="vf-search-box" style={{background:'var(--white)',borderRadius:20,padding:'28px 32px',width:'100%',maxWidth:780,boxShadow:'0 16px 60px rgba(0,0,0,0.28)',position:'relative',zIndex:10,marginBottom:16}}>
           <div className="vf-search-grid" style={{display:'grid',gridTemplateColumns:'3fr 2fr',gap:14,marginBottom:16,alignItems:'end'}}>
             <div>
               <label style={{fontSize:'0.68rem',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--mid)',marginBottom:5,display:'block'}}>Venue Location</label>
@@ -2448,7 +2448,7 @@ function CustomerBrowseView({user,venue,setVenue,venueLatLng,setVenueLatLng,date
         </div>
 
         {/* Category filter — pills row below search, same as public view */}
-        <div style={{position:'relative',zIndex:2,width:'100%',maxWidth:780}}>
+        <div style={{position:'relative',zIndex:1,width:'100%',maxWidth:780}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
             <span style={{fontSize:'0.68rem',letterSpacing:'0.12em',textTransform:'uppercase',color:'rgba(255,255,255,0.45)'}}>Filter by category</span>
             <button onClick={()=>toggleType('all')} style={{background:'none',border:'none',cursor:'pointer',padding:'4px 10px',fontSize:'0.78rem',fontFamily:"'DM Sans',sans-serif",color:selectedTypes.size===ALL_TYPES.length?'var(--gold)':'rgba(255,255,255,0.45)',fontWeight:selectedTypes.size===ALL_TYPES.length?600:400,textDecoration:selectedTypes.size===ALL_TYPES.length?'none':'underline',textUnderlineOffset:'3px',transition:'color 0.15s'}}>
@@ -2743,7 +2743,7 @@ export default function VowFinds() {
             </p>
 
             {/* ── Main search box ── */}
-            <div className="vf-search-box" style={{background:'var(--white)',borderRadius:20,padding:'28px 32px',width:'100%',maxWidth:780,boxShadow:'0 16px 60px rgba(0,0,0,0.28)',position:'relative',zIndex:2,marginBottom:16}}>
+            <div className="vf-search-box" style={{background:'var(--white)',borderRadius:20,padding:'28px 32px',width:'100%',maxWidth:780,boxShadow:'0 16px 60px rgba(0,0,0,0.28)',position:'relative',zIndex:10,marginBottom:16}}>
               <div className="vf-search-grid" style={{display:'grid',gridTemplateColumns:'3fr 2fr',gap:14,marginBottom:16,alignItems:'end'}}>
                 {/* Venue */}
                 <div>
@@ -2776,7 +2776,7 @@ export default function VowFinds() {
             </div>
 
             {/* ── Category filter ── */}
-            <div style={{position:'relative',zIndex:2,width:'100%',maxWidth:780}}>
+            <div style={{position:'relative',zIndex:1,width:'100%',maxWidth:780}}>
               {/* Header row: label on left, Select All on right */}
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
                 <span style={{fontSize:'0.68rem',letterSpacing:'0.12em',textTransform:'uppercase',color:'rgba(255,255,255,0.45)'}}>Filter by category</span>

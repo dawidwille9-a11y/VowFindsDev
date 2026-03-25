@@ -375,7 +375,7 @@ function CustomerAuthModal({onLogin, onClose, redirectVendor=null}) {
         </p>
         <form onSubmit={mode==='login'?handleLogin:handleRegister}>
           {mode==='register'&&(
-            <div style={{marginBottom:12}}>
+            <div className="vf-lane-wrapper" style={{marginBottom:12}}>
               <label style={labelStyle}>Your Name</label>
               <input style={{...inputStyle,marginBottom:0}} type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Jane Smith" required/>
             </div>
@@ -1351,13 +1351,13 @@ function VendorLane({type,vendors,dateFrom,dateTo,onOpenDetail,isLast,onRequestQ
   const visible=vendors.filter(v=>calcTotal(v)<=maxPrice);
   return (
     <div style={{marginBottom:12}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 32px',marginBottom:16,flexWrap:'wrap',gap:12}}>
+      <div className="vf-lane-header" style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 32px',marginBottom:16,flexWrap:'wrap',gap:12}}>
         <div style={{display:'flex',alignItems:'center',gap:14}}>
           <span style={{fontSize:'1.3rem'}}>{TYPE_EMOJI[type]}</span>
           <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.5rem',fontWeight:600,color:'var(--forest)'}}>{type}</span>
           <span style={{fontSize:'0.75rem',color:'var(--light)',background:'var(--parchment)',padding:'3px 10px',borderRadius:999}}>{visible.length} of {vendors.length} vendor{vendors.length!==1?'s':''}</span>
         </div>
-        <div style={{background:'var(--white)',borderRadius:10,padding:'10px 18px',boxShadow:'var(--card-shadow)',display:'flex',flexDirection:'column',gap:6,minWidth:260}}>
+        <div className="vf-lane-slider" style={{background:'var(--white)',borderRadius:10,padding:'10px 18px',boxShadow:'var(--card-shadow)',display:'flex',flexDirection:'column',gap:6,minWidth:260}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}><span style={{fontSize:'0.7rem',letterSpacing:'0.09em',textTransform:'uppercase',color:'var(--mid)'}}>Max price</span><span style={{fontSize:'0.82rem',fontWeight:600,color:'var(--rose)'}}>{fmt(maxPrice)}</span></div>
           <div style={{position:'relative'}}>
             <input type="range" min={minT} max={sliderMax} step={500} value={maxPrice} onChange={e=>setMaxPrice(parseInt(e.target.value))} style={{width:'100%',WebkitAppearance:'none',appearance:'none',height:4,borderRadius:2,outline:'none',cursor:'pointer',background:`linear-gradient(to right,var(--rose) 0%,var(--rose) ${pct}%,var(--parchment) ${pct}%,var(--parchment) 100%)`}}/>
@@ -1374,7 +1374,7 @@ function VendorLane({type,vendors,dateFrom,dateTo,onOpenDetail,isLast,onRequestQ
           {visible.length===0&&<div style={{padding:'24px 0',fontSize:'0.85rem',color:'var(--light)',fontStyle:'italic'}}>No vendors match this price filter.</div>}
         </div>
       </div>
-      {!isLast&&<hr style={{border:'none',borderTop:'1px solid var(--parchment)',margin:'8px 32px 40px'}}/>}
+      {!isLast&&<hr className="vf-lane-divider" style={{border:'none',borderTop:'1px solid var(--parchment)',margin:'8px 32px 40px'}}/>}
     </div>
   );
 }
@@ -2953,10 +2953,33 @@ function GlobalStyles(){return(
       }
       .vf-vendor-card .vf-card-ig{width:24px!important;height:24px!important;}
 
-      /* Results section — white/cream palette */
+      /* Results section — light cream palette throughout */
       .vf-results-section{background:#fdfaf7!important;}
+      .vf-lane-wrapper{background:#fdfaf7!important;}
       .vf-lane-fade-left{background:linear-gradient(to right,#fdfaf7,transparent)!important;}
       .vf-lane-fade-right{background:linear-gradient(to left,#fdfaf7,transparent)!important;}
+      .vf-lane-divider{border-top-color:#e8e0d6!important;margin:4px 16px 28px!important;}
+
+      /* Price slider box — lighter, less heavy on mobile */
+      .vf-lane-slider{
+        background:#f5f0e8!important;
+        box-shadow:0 1px 6px rgba(0,0,0,0.06)!important;
+        border:1px solid #e8ddd0!important;
+        min-width:unset!important;
+        width:100%!important;
+        border-radius:10px!important;
+        padding:8px 14px!important;
+      }
+
+      /* Lane header — stack on mobile so slider goes below category title */
+      .vf-lane-header{
+        flex-direction:column!important;
+        align-items:flex-start!important;
+        padding:0 16px!important;
+        gap:8px!important;
+        margin-bottom:10px!important;
+      }
+
       .vf-results-header{padding:0 16px 14px!important;}
       .vf-results-title{font-size:1.5rem!important;}
 

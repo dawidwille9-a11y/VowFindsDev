@@ -1809,11 +1809,25 @@ function ScenarioVenueInput({scenarioId, initialValue, onPinned, pinned}) {
   );
 }
 
-function ScenarioBuilder({user,vendors,onClose}) {
+function ScenarioBuilder({user,vendors:passedVendors,onClose}) {
   const [scenarios,setScenarios]=useState([{id:1,venue:'',venueLatLng:null,venuePinned:false,date:'',budgets:{}}]);
   const [results,setResults]=useState(null);
-  const [selectedVendors,setSelectedVendors]=useState({}); // {scenarioId: {type: vendorId}}
-  const [step,setStep]=useState('build'); // 'build' | 'results' | 'summary'
+  const [selectedVendors,setSelectedVendors]=useState({});
+  const [step,setStep]=useState('build');
+  const [allVendors,setAllVendors]=useState(passedVendors||[]);
+  const [vendorsLoading,setVendorsLoading]=useState(false);
+  const [vendorsError,setVendorsError]=useState('');
+
+  // Fetch all vendors on mount regardless of whether parent passed any
+  useEffect(()=>{
+    if(allVendors.length===0){
+      setVendorsLoading(true);
+      supaFetch('vendors?select=*,images:vendor_images(*),unavail_dates:vendor_unavailable_dates(date)&order=type,name')
+        .then(data=>{setAllVendors(data||[]);})
+        .catch(e=>{setVendorsError('Could not load vendors: '+e.message);})
+        .finally(()=>setVendorsLoading(false));
+    }
+  },[]);
 
   function addScenario(){
     const id=Date.now();
@@ -1830,9 +1844,9 @@ function ScenarioBuilder({user,vendors,onClose}) {
     setRunning(true);
     const res=await Promise.all(scenarios.map(async sc=>{
       // Re-calculate distances for each vendor from this scenario's venue
-      let scenVendors=vendors;
+      let scenVendors=allVendors;
       if(sc.venueLatLng){
-        scenVendors=await Promise.all(vendors.map(async v=>{
+        scenVendors=await Promise.all(allVendors.map(async v=>{
           if(!v.lat||!v.lng)return v;
           try{
             const km=await getDistanceKm(sc.venueLatLng,{lat:v.lat,lng:v.lng});
@@ -2131,13 +2145,15 @@ function ScenarioBuilder({user,vendors,onClose}) {
             ⚠️ Some venues haven't been pinned via the dropdown — type and select from the suggestions to lock in the location for accurate distance pricing.
           </div>
         )}
+        {vendorsError&&<div style={{color:'var(--rose)',fontSize:'0.82rem',marginBottom:12,padding:'10px 14px',background:'rgba(196,130,106,0.08)',borderRadius:8}}>{vendorsError}</div>}
         <div style={{display:'flex',gap:12,marginTop:4}}>
           <button onClick={addScenario} style={{flex:1,background:'var(--parchment)',color:'var(--forest)',border:'1.5px dashed var(--blush)',borderRadius:10,padding:'12px',fontSize:'0.88rem',cursor:'pointer',fontWeight:500}}>+ Add Another Scenario</button>
-          <button onClick={runScenarios} disabled={vendors.length===0||running} style={{flex:2,background:'var(--forest)',color:'var(--gold-light)',border:'none',borderRadius:10,padding:'12px',fontSize:'0.9rem',fontWeight:500,cursor:(vendors.length===0||running)?'not-allowed':'pointer',letterSpacing:'0.04em'}}>
-            {running?'Calculating distances…':vendors.length===0?'Search for vendors first to run scenarios':'Run Scenarios →'}
+          <button onClick={runScenarios} disabled={vendorsLoading||running} style={{flex:2,background:'var(--forest)',color:'var(--gold-light)',border:'none',borderRadius:10,padding:'12px',fontSize:'0.9rem',fontWeight:500,cursor:(vendorsLoading||running)?'not-allowed':'pointer',letterSpacing:'0.04em'}}>
+            {running?'Calculating distances…':vendorsLoading?'Loading vendors…':'Run Scenarios →'}
           </button>
         </div>
-        {vendors.length===0&&<p style={{textAlign:'center',fontSize:'0.78rem',color:'var(--light)',marginTop:10}}>Search for vendors on the home page first, then open the Scenario Builder.</p>}
+        {vendorsLoading&&<p style={{textAlign:'center',fontSize:'0.78rem',color:'var(--light)',marginTop:10}}>Loading all vendors from database…</p>}
+        {!vendorsLoading&&allVendors.length>0&&<p style={{textAlign:'center',fontSize:'0.78rem',color:'var(--forest)',marginTop:10}}>✓ {allVendors.length} vendors loaded and ready</p>}
       </div>
     </div>
   );

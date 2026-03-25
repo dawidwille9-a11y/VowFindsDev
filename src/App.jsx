@@ -724,29 +724,29 @@ function ChatThread({lead,currentRole,currentName,onBack}) {
   );
 }
 
-// ── CUSTOMER DASHBOARD ────────────────────────────────────────────────────────
 // ── CUSTOMER DASHBOARD ───────────────────────────────────────────────────────
 function CustomerDashboard({user,onLogout,onBrowse,initialLead=null}) {
   const [leads,setLeads]=useState([]);
   const [loading,setLoading]=useState(true);
-  const [activeLead,setActiveLead]=useState(initialLead);
+  const [activeLead,setActiveLead]=useState(null);
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const pollRef=useRef(null);
+  // Track whether the initial lead has been applied — only do it once
+  const initialLeadApplied=useRef(false);
 
   useEffect(()=>{
     loadLeads();
-    // Poll for new messages every 8s
     pollRef.current=setInterval(loadLeads,8000);
     return()=>clearInterval(pollRef.current);
   },[]);
 
-  // If a new lead comes in after quote submit, select it
+  // Apply initialLead only once, after first load
   useEffect(()=>{
-    if(initialLead&&leads.length>0){
+    if(initialLead&&leads.length>0&&!initialLeadApplied.current){
       const found=leads.find(l=>l.id===initialLead.id);
-      if(found)setActiveLead(found);
+      if(found){setActiveLead(found);initialLeadApplied.current=true;}
     }
-  },[leads,initialLead]);
+  },[leads]);
 
   async function loadLeads(){
     try{
@@ -872,40 +872,58 @@ function CustomerDashboard({user,onLogout,onBrowse,initialLead=null}) {
               />
             </div>
           ):(
-            <div style={{maxWidth:760,margin:'0 auto',padding:'32px 24px 60px'}}>
+          ):(
+            <div style={{maxWidth:820,margin:'0 auto',padding:'28px 24px 60px'}}>
               <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.6rem',color:'var(--forest)',fontWeight:400,marginBottom:4}}>My Quote Requests</div>
-              <p style={{color:'var(--light)',fontSize:'0.82rem',marginBottom:24}}>Click any conversation to open the chat.</p>
-              {loading?<div style={{textAlign:'center',padding:'60px',color:'var(--light)'}}>Loading…</div>:
-                leads.length===0?(
-                  <div style={{textAlign:'center',padding:'60px 20px',background:'var(--white)',borderRadius:16,boxShadow:'var(--card-shadow)'}}>
-                    <div style={{fontSize:'3rem',marginBottom:12}}>💌</div>
-                    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.4rem',color:'var(--forest)',marginBottom:8}}>No quote requests yet</div>
-                    <p style={{color:'var(--mid)',fontSize:'0.88rem',marginBottom:16}}>Browse vendors and click "Request a Quote" to get started.</p>
-                    <button onClick={onBrowse} style={{background:'var(--forest)',color:'var(--gold-light)',border:'none',borderRadius:8,padding:'10px 22px',fontSize:'0.88rem',cursor:'pointer'}}>Browse Vendors</button>
+              <p style={{color:'var(--light)',fontSize:'0.82rem',marginBottom:24}}>Your conversations grouped by vendor category.</p>
+              {loading?(
+                <div style={{textAlign:'center',padding:'60px',color:'var(--light)'}}>Loading…</div>
+              ):leads.length===0?(
+                <div style={{textAlign:'center',padding:'60px 20px',background:'var(--white)',borderRadius:16,boxShadow:'var(--card-shadow)'}}>
+                  <div style={{fontSize:'3rem',marginBottom:12}}>💌</div>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.4rem',color:'var(--forest)',marginBottom:8}}>No quote requests yet</div>
+                  <p style={{color:'var(--mid)',fontSize:'0.88rem',marginBottom:16}}>Browse vendors and click "Request a Quote" to get started.</p>
+                  <button onClick={onBrowse} style={{background:'var(--forest)',color:'var(--gold-light)',border:'none',borderRadius:8,padding:'10px 22px',fontSize:'0.88rem',cursor:'pointer'}}>Browse Vendors</button>
+                </div>
+              ):(()=>{
+                const grouped={};
+                leads.forEach(lead=>{const type=lead.vendor?.type||'Other';if(!grouped[type])grouped[type]=[];grouped[type].push(lead);});
+                const orderedTypes=[...ALL_TYPES.filter(t=>grouped[t]),...Object.keys(grouped).filter(t=>!ALL_TYPES.includes(t)&&grouped[t])];
+                return orderedTypes.map(type=>(
+                  <div key={type} style={{marginBottom:28}}>
+                    <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12,paddingBottom:8,borderBottom:'2px solid var(--parchment)'}}>
+                      <span style={{fontSize:'1.2rem'}}>{TYPE_EMOJI[type]||'💼'}</span>
+                      <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.3rem',fontWeight:600,color:'var(--forest)'}}>{type}</span>
+                      <span style={{fontSize:'0.72rem',color:'var(--light)',background:'var(--parchment)',padding:'2px 9px',borderRadius:999}}>{grouped[type].length} conversation{grouped[type].length!==1?'s':''}</span>
+                    </div>
+                    <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                      {grouped[type].map(lead=>{
+                        const hasNew=lead.last_message?.sender_role==='vendor'&&lead.status!=='closed';
+                        return(
+                          <div key={lead.id} onClick={()=>setActiveLead(lead)}
+                            style={{background:'var(--white)',borderRadius:12,padding:'14px 18px',boxShadow:'var(--card-shadow)',cursor:'pointer',transition:'box-shadow 0.15s,transform 0.15s',display:'flex',alignItems:'center',gap:14,borderLeft:`3px solid ${hasNew?'var(--rose)':'var(--parchment)'}`}}
+                            onMouseEnter={e=>{e.currentTarget.style.boxShadow='var(--card-shadow-hover)';e.currentTarget.style.transform='translateY(-2px)';}}
+                            onMouseLeave={e=>{e.currentTarget.style.boxShadow='var(--card-shadow)';e.currentTarget.style.transform='';}}>
+                            <div style={{width:44,height:44,borderRadius:9,background:lead.vendor?.images?.[0]?.url?`url(${lead.vendor.images[0].url}) center/cover`:`linear-gradient(135deg,${lead.vendor?.color||'#c8a87a'}dd,${lead.vendor?.color||'#c8a87a'}66)`,flexShrink:0}}/>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+                                <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1rem',fontWeight:600,color:'var(--forest)'}}>{lead.vendor?.name}</span>
+                                {hasNew&&<span style={{width:7,height:7,borderRadius:'50%',background:'var(--rose)',flexShrink:0,display:'inline-block'}}/>}
+                              </div>
+                              <div style={{fontSize:'0.74rem',color:'var(--mid)',marginBottom:3}}>{lead.title}</div>
+                              {lead.last_message&&<div style={{fontSize:'0.73rem',color:'var(--light)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{lead.last_message.sender_role==='vendor'?'Vendor: ':''}{lead.last_message.message_text||'📎 Attachment'}</div>}
+                            </div>
+                            <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:5,flexShrink:0}}>
+                              <span style={{background:STATUS_BG[lead.status]||STATUS_BG.new,color:STATUS_COLOR[lead.status]||STATUS_COLOR.new,borderRadius:999,fontSize:'0.65rem',padding:'2px 8px',fontWeight:600,textTransform:'uppercase'}}>{lead.status||'new'}</span>
+                              <span style={{fontSize:'0.68rem',color:'var(--light)'}}>{lead.created_at?new Date(lead.created_at).toLocaleDateString('en-ZA',{day:'numeric',month:'short'}):''}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                ):(
-                  <div style={{display:'grid',gap:12}}>
-                    {leads.map(lead=>(
-                      <div key={lead.id} onClick={()=>setActiveLead(lead)}
-                        style={{background:'var(--white)',borderRadius:14,padding:'16px 20px',boxShadow:'var(--card-shadow)',cursor:'pointer',transition:'box-shadow 0.2s,transform 0.15s',display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}
-                        onMouseEnter={e=>{e.currentTarget.style.boxShadow='var(--card-shadow-hover)';e.currentTarget.style.transform='translateY(-2px)';}}
-                        onMouseLeave={e=>{e.currentTarget.style.boxShadow='var(--card-shadow)';e.currentTarget.style.transform='';}}>
-                        <div style={{width:48,height:48,borderRadius:10,background:lead.vendor?.images?.[0]?.url?`url(${lead.vendor.images[0].url}) center/cover`:`linear-gradient(135deg,${lead.vendor?.color||'#c8a87a'}dd,${lead.vendor?.color||'#c8a87a'}66)`,flexShrink:0}}/>
-                        <div style={{flex:1,minWidth:150}}>
-                          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.05rem',fontWeight:600,color:'var(--forest)',marginBottom:2}}>{lead.vendor?.name}</div>
-                          <div style={{fontSize:'0.76rem',color:'var(--mid)'}}>{TYPE_EMOJI[lead.vendor?.type]||''} {lead.title}</div>
-                          {lead.last_message&&<div style={{fontSize:'0.74rem',color:'var(--light)',marginTop:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:300}}>{lead.last_message.sender_role==='vendor'?'Vendor: ':''}{lead.last_message.message_text||'📎 Attachment'}</div>}
-                        </div>
-                        <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:5}}>
-                          <span style={{background:STATUS_BG[lead.status]||STATUS_BG.new,color:STATUS_COLOR[lead.status]||STATUS_COLOR.new,borderRadius:999,fontSize:'0.68rem',padding:'2px 9px',fontWeight:600,textTransform:'uppercase'}}>{lead.status||'new'}</span>
-                          <span style={{fontSize:'0.68rem',color:'var(--light)'}}>{lead.created_at?new Date(lead.created_at).toLocaleDateString('en-ZA',{day:'numeric',month:'short'}):''}</span>
-                          <span style={{fontSize:'0.78rem',color:'var(--rose)',fontWeight:500}}>Open chat →</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )
-              }
+                ));
+              })()}
             </div>
           )}
         </div>
@@ -1400,12 +1418,12 @@ function VendorDetail({vendor,dateFrom,dateTo,venueLabel,venueLatLng,onBack,onRe
 }
 
 // ── VENDOR LANE ───────────────────────────────────────────────────────────────
-function VendorLane({type,vendors,dateFrom,dateTo,onOpenDetail,isLast,onRequestQuote,customerId=null}) {
+function VendorLane({type,vendors,dateFrom,dateTo,onOpenDetail,isLast,onRequestQuote,customerId=null,initialMaxPrice=null}) {
   // On-request categories have no fixed pricing — skip the price slider entirely
   const allOnRequest = ON_REQUEST_TYPES.has(type);
   const totals=vendors.map(v=>calcTotal(v));
   const maxT=Math.max(...totals,1000),minT=Math.min(...totals,0),avgT=avg(totals),sliderMax=Math.ceil(maxT*1.15/1000)*1000;
-  const [maxPrice,setMaxPrice]=useState(sliderMax);
+  const [maxPrice,setMaxPrice]=useState(()=>initialMaxPrice!==null?Math.min(initialMaxPrice,sliderMax):sliderMax);
   const pct=Math.round(((maxPrice-minT)/(sliderMax-minT))*100),avgPct=avgT>0?Math.round(((avgT-minT)/(sliderMax-minT))*100):0;
   const visible=allOnRequest?vendors:vendors.filter(v=>calcTotal(v)<=maxPrice);
   return (
@@ -2223,7 +2241,7 @@ const BUDGET_RATIOS = {
 };
 
 // ── WEDDING PLAN VENUE INPUT (Google Maps autocomplete) ───────────────────────
-function WeddingPlanVenueInput({value, onChange}) {
+function WeddingPlanVenueInput({value, onChange, onLatLng}) {
   const inputRef = useRef();
   useEffect(()=>{
     if(inputRef.current && value) inputRef.current.value = value;
@@ -2239,6 +2257,7 @@ function WeddingPlanVenueInput({value, onChange}) {
           const name = place.formatted_address || place.name;
           if(inputRef.current) inputRef.current.value = name;
           onChange(name);
+          if(onLatLng) onLatLng({lat:place.geometry.location.lat(),lng:place.geometry.location.lng()});
         }
       });
     });
@@ -2255,9 +2274,10 @@ function WeddingPlanVenueInput({value, onChange}) {
   );
 }
 
-function WeddingPlan({onClose, vendors: passedVendors}) {
+function WeddingPlan({onClose, vendors: passedVendors, onSearchVendors}) {
   const [planStep, setPlanStep] = useState('intro');
   const [weddingVenue, setWeddingVenue] = useState('');
+  const [weddingVenueLatLng, setWeddingVenueLatLng] = useState(null);
   const [totalBudget, setTotalBudget] = useState('');
   const [onReqAverages, setOnReqAverages] = useState({});
   const [allVendors, setAllVendors] = useState(passedVendors||[]);
@@ -2361,7 +2381,7 @@ function WeddingPlan({onClose, vendors: passedVendors}) {
         <div style={{background:'var(--white)',borderRadius:16,boxShadow:'var(--card-shadow)',padding:'28px'}}>
           <div style={{marginBottom:20}}>
             <label style={labelStyle}>Wedding Venue / Location</label>
-            <WeddingPlanVenueInput value={weddingVenue} onChange={setWeddingVenue}/>
+            <WeddingPlanVenueInput value={weddingVenue} onChange={setWeddingVenue} onLatLng={ll=>setWeddingVenueLatLng(ll)}/>
           </div>
           <div style={{marginBottom:24}}>
             <label style={labelStyle}>Total Vendor Budget (R)</label>
@@ -2486,6 +2506,13 @@ function WeddingPlan({onClose, vendors: passedVendors}) {
                     <div style={{background:'rgba(196,130,106,0.06)',borderRadius:10,padding:'11px 14px',border:'1px solid rgba(196,130,106,0.18)',fontSize:'0.82rem',color:'var(--mid)',lineHeight:1.6}}>
                       💌 Final pricing is on request — figures above are indicative for budgeting. Use <em>Request a Quote</em> on any {item.type} vendor page.
                     </div>
+                    {onSearchVendors&&(
+                      <button
+                        onClick={()=>onSearchVendors({venueName:weddingVenue,venueLL:weddingVenueLatLng,type:item.type,maxPrice:null})}
+                        style={{marginTop:10,width:'100%',background:'var(--forest)',color:'var(--gold-light)',border:'none',borderRadius:10,padding:'11px',fontFamily:"'DM Sans',sans-serif",fontSize:'0.88rem',fontWeight:500,cursor:'pointer',letterSpacing:'0.04em',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                        🔍 Browse {item.type} Vendors
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
@@ -2506,6 +2533,13 @@ function WeddingPlan({onClose, vendors: passedVendors}) {
                       {catAvg&&recSpend>0&&<div style={{fontSize:'0.71rem',marginTop:5,color:recSpend>=catAvg?'var(--forest)':'var(--rose)',fontWeight:500}}>{recSpend>=catAvg?'✓ Within range':'⚠ Below average'}</div>}
                     </div>
                   </div>
+                  {onSearchVendors&&(
+                    <button
+                      onClick={()=>onSearchVendors({venueName:weddingVenue,venueLL:weddingVenueLatLng,type:item.type,maxPrice:recSpend||null})}
+                      style={{marginTop:12,width:'100%',background:'var(--forest)',color:'var(--gold-light)',border:'none',borderRadius:10,padding:'11px',fontFamily:"'DM Sans',sans-serif",fontSize:'0.88rem',fontWeight:500,cursor:'pointer',letterSpacing:'0.04em',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                      🔍 Search {item.type} Vendors{recSpend?` (up to ${fmt(recSpend)})`:''}
+                    </button>
+                  )}
                 )}
               </div>
             </div>
@@ -2557,6 +2591,13 @@ function WeddingPlan({onClose, vendors: passedVendors}) {
                         <div style={{fontSize:'0.69rem',color:'var(--light)'}}>{Math.round((BUDGET_RATIOS[type]||0.04)*100)}% of your budget</div>
                       </div>
                     </div>
+                    {onSearchVendors&&(
+                      <button
+                        onClick={()=>onSearchVendors({venueName:weddingVenue,venueLL:weddingVenueLatLng,type,maxPrice:recAdditional||null})}
+                        style={{marginTop:10,width:'100%',background:'var(--forest)',color:'var(--gold-light)',border:'none',borderRadius:10,padding:'10px',fontFamily:"'DM Sans',sans-serif",fontSize:'0.85rem',fontWeight:500,cursor:'pointer',letterSpacing:'0.04em',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                        🔍 Search {type} Vendors{recAdditional?` (up to ${fmt(recAdditional)})`:''}
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -2964,7 +3005,7 @@ function ScenarioBuilder({user,vendors:passedVendors,onClose}) {
 
 
 // ── CUSTOMER BROWSE VIEW (logged-in customer browsing vendors) ────────────────
-function CustomerBrowseView({user,venue,setVenue,venueLatLng,setVenueLatLng,dateFrom,setDateFrom,dateTo,setDateTo,selectedTypes,setSelectedTypes,vendors,setVendors,loading,setLoading,loadError,setLoadError,calcProgress,setCalcProgress,searched,setSearched,showMap,setShowMap,openDetail,onRequestQuote,onOpenScenario,onOpenFavourites,browseView,setBrowseView}) {
+function CustomerBrowseView({user,venue,setVenue,venueLatLng,setVenueLatLng,dateFrom,setDateFrom,dateTo,setDateTo,selectedTypes,setSelectedTypes,vendors,setVendors,loading,setLoading,loadError,setLoadError,calcProgress,setCalcProgress,searched,setSearched,showMap,setShowMap,openDetail,onRequestQuote,onOpenScenario,onOpenFavourites,browseView,setBrowseView,planMaxPrices=null}) {
   const activeTypes=selectedTypes.size===0?ALL_TYPES:ALL_TYPES.filter(t=>selectedTypes.has(t));
   const vendorsByType={};activeTypes.forEach(t=>{vendorsByType[t]=vendors.filter(v=>v.type===t);});
   const vendorsWithLoc=vendors.filter(v=>v.lat&&v.lng);
@@ -3059,7 +3100,7 @@ function CustomerBrowseView({user,venue,setVenue,venueLatLng,setVenueLatLng,date
             {vendorsWithLoc.length>0&&<button onClick={()=>setShowMap(s=>!s)} style={{background:'var(--white)',border:'1.5px solid var(--parchment)',borderRadius:8,padding:'7px 14px',fontFamily:"'DM Sans',sans-serif",fontSize:'0.78rem',color:'var(--forest)',cursor:'pointer'}}>{showMap?'🗺 Hide map':'🗺 Show map'}</button>}
           </div>
           {!loading&&!loadError&&showMap&&vendorsWithLoc.length>0&&<VendorsMap vendors={vendorsWithLoc} venueLatLng={venueLatLng} onSelectVendor={openDetail}/>}
-          {!loading&&!loadError&&activeTypes.map((type,idx)=>{const tv=vendorsByType[type];if(!tv||tv.length===0)return null;return<VendorLane key={type} type={type} vendors={tv} dateFrom={dateFrom} dateTo={dateTo} onOpenDetail={openDetail} isLast={idx===activeTypes.length-1} onRequestQuote={onRequestQuote} customerId={user?.customerId}/>;  })}
+          {!loading&&!loadError&&activeTypes.map((type,idx)=>{const tv=vendorsByType[type];if(!tv||tv.length===0)return null;return<VendorLane key={type} type={type} vendors={tv} dateFrom={dateFrom} dateTo={dateTo} onOpenDetail={openDetail} isLast={idx===activeTypes.length-1} onRequestQuote={onRequestQuote} customerId={user?.customerId} initialMaxPrice={planMaxPrices?planMaxPrices[type]??null:null}/>;  })}
         </div>
       )}
     </div>
@@ -3092,6 +3133,7 @@ export default function VowFinds() {
   const [menuOpen,setMenuOpen]=useState(false);
   const [showScenario,setShowScenario]=useState(false);
   const [showWeddingPlan,setShowWeddingPlan]=useState(false);
+  const [planMaxPrices,setPlanMaxPrices]=useState(null); // set by WeddingPlan search
 
   function handleLogin(u){
     setUser(u);
@@ -3193,7 +3235,32 @@ export default function VowFinds() {
         ):customerView==='favourites'?(
           <FavouritesView customerId={user?.customerId} onOpenDetail={(v)=>{setActiveVendor(v);setView('detail');setCustomerView('browse');}} onRequestQuote={requestQuote} dateFrom={dateFrom} dateTo={dateTo}/>
         ):customerView==='weddingplan'?(
-          <WeddingPlan vendors={vendors} onClose={()=>setCustomerView('browse')}/>
+          <WeddingPlan vendors={vendors} onClose={()=>setCustomerView('browse')}
+            onSearchVendors={({venueName,venueLL,type,maxPrice})=>{
+              const newVenue=venueName||venue;
+              const newLL=venueLL||venueLatLng;
+              setVenue(newVenue);
+              if(newLL)setVenueLatLng(newLL);
+              setSelectedTypes(new Set([type]));
+              if(maxPrice!==null)setPlanMaxPrices(prev=>({...(prev||{}),[type]:maxPrice}));
+              setSearched(true);
+              setCustomerView('browse');
+              // Trigger a fresh vendor load so results show immediately
+              if(newVenue.trim()){
+                setLoading(true);setLoadError('');setCalcProgress('');
+                supaFetch('vendors?select=*,images:vendor_images(*),unavail_dates:vendor_unavailable_dates(date)&order=type,name')
+                  .then(async data=>{
+                    if(newLL){
+                      setCalcProgress('Calculating distances…');
+                      const kms=await getBatchDistancesKm(newLL,data);
+                      setVendors(data.map((v,i)=>({...v,distance_km:kms[i]||0})));
+                    }else setVendors(data);
+                    setCalcProgress('');
+                  }).catch(e=>setLoadError('Could not load vendors: '+e.message))
+                  .finally(()=>setLoading(false));
+              }
+            }}
+          />
         ):customerView==='scenario'?(
           <ScenarioBuilder user={user} vendors={vendors} onClose={()=>setCustomerView('browse')}/>
         ):(
@@ -3222,6 +3289,7 @@ export default function VowFinds() {
                 showMap={showMap} setShowMap={setShowMap}
                 openDetail={(v)=>{setPrevScroll(0);setActiveVendor(v);setView('detail');window.scrollTo({top:0});}}
                 onRequestQuote={requestQuote}
+                planMaxPrices={planMaxPrices}
               />
             )}
           </div>
@@ -3265,7 +3333,31 @@ export default function VowFinds() {
     <>
       <GlobalStyles/>
       {showScenario&&<div style={{position:'fixed',inset:0,zIndex:500,background:'var(--cream)',overflowY:'auto'}}><ScenarioBuilder user={null} vendors={vendors} onClose={()=>setShowScenario(false)}/></div>}
-      {showWeddingPlan&&<div style={{position:'fixed',inset:0,zIndex:500,background:'var(--cream)',overflowY:'auto'}}><WeddingPlan vendors={vendors} onClose={()=>setShowWeddingPlan(false)}/></div>}
+      {showWeddingPlan&&<div style={{position:'fixed',inset:0,zIndex:500,background:'var(--cream)',overflowY:'auto'}}><WeddingPlan vendors={vendors} onClose={()=>setShowWeddingPlan(false)}
+          onSearchVendors={({venueName,venueLL,type,maxPrice})=>{
+            const newVenue=venueName||venue;
+            const newLL=venueLL||venueLatLng;
+            setVenue(newVenue);
+            if(newLL)setVenueLatLng(newLL);
+            setSelectedTypes(new Set([type]));
+            if(maxPrice!==null)setPlanMaxPrices(prev=>({...(prev||{}),[type]:maxPrice}));
+            setSearched(true);
+            setShowWeddingPlan(false);
+            if(newVenue.trim()){
+              setLoading(true);setLoadError('');setCalcProgress('');
+              supaFetch('vendors?select=*,images:vendor_images(*),unavail_dates:vendor_unavailable_dates(date)&order=type,name')
+                .then(async data=>{
+                  if(newLL){
+                    setCalcProgress('Calculating distances…');
+                    const kms=await getBatchDistancesKm(newLL,data);
+                    setVendors(data.map((v,i)=>({...v,distance_km:kms[i]||0})));
+                  }else setVendors(data);
+                  setCalcProgress('');
+                }).catch(e=>setLoadError('Could not load vendors: '+e.message))
+                .finally(()=>setLoading(false));
+            }
+          }}
+        /></div>}
       {showLoginModal && <LoginModal onLogin={handleLogin} onClose={()=>setShowLoginModal(false)}/>}
       {showCustomerAuth && <CustomerAuthModal onLogin={handleLogin} onClose={()=>{setShowCustomerAuth(false);setPendingQuoteVendor(null);}} redirectVendor={pendingQuoteVendor}/>}
       {quoteVendor && user?.role==='customer' && <QuoteModal vendor={quoteVendor} customer={user} onClose={()=>setQuoteVendor(null)} onSubmitted={()=>setQuoteVendor(null)}/>}

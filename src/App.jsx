@@ -2179,41 +2179,96 @@ function FavouritesView({customerId,onOpenDetail,onRequestQuote,dateFrom,dateTo}
 }
 
 // ── WEDDING PLAN ──────────────────────────────────────────────────────────────
+// ── WEDDING PLAN CONSTANTS ────────────────────────────────────────────────────
+
+// Primary booking order — these are the 10 core vendor categories
 const BOOKING_ORDER = [
-  {step:1, type:'Venue',         emoji:'🏛',  note:'Your venue sets the date, style and guest count — everything else flows from this choice.',          why:'Venues book up to 18 months in advance. Locking this in first lets every other vendor know the date.'},
-  {step:2, type:'Photography',   emoji:'📷',  note:'Your photographer captures memories that last a lifetime. The best ones book out fast.',              why:'Top photographers are often booked 12+ months ahead. Secure yours early while you have full choice.'},
-  {step:3, type:'Catering',      emoji:'🍽',  note:'Food is often the most talked-about part of a wedding. Great catering makes a great party.',          why:'Caterers need lead time to plan menus, source ingredients, and staff appropriately for your guest count.'},
-  {step:4, type:'Florist',       emoji:'💐',  note:'Flowers set the mood — from the ceremony arch to table centrepieces and bridal bouquets.',             why:'Florals require detailed planning and sourcing. Book early to ensure your preferred style and blooms.'},
-  {step:5, type:'Videography',   emoji:'🎬',  note:'A wedding film lets you relive every moment for years to come — sound, movement, and emotion.',        why:'Videographers are often booked alongside photographers. The best ones fill their calendars quickly.'},
-  {step:6, type:'DJ',            emoji:'🎧',  note:'Your DJ keeps the energy alive from first dance to last song. The right DJ reads the crowd.',           why:'Great DJs fill up their weekends fast, especially for peak season. Book to secure your date.'},
-  {step:7, type:'Entertainment', emoji:'🎶',  note:'Pre-drinks entertainment keeps guests engaged while you finish photos — bands, soloists, or acts.',     why:'Live entertainers book up quickly for peak wedding season. Unique acts are limited.'},
-  {step:8, type:'Cake & Desserts',emoji:'🎂', note:'Your cake is a centrepiece and a treat. Custom designs take time and careful planning.',               why:'Custom wedding cakes require weeks of design, tasting sessions, and preparation.'},
-  {step:9, type:'Furniture Rental',emoji:'🛋',note:'Tables, chairs, lounge sets, and dance floors transform a space into your dream setting.',             why:'Popular furniture sets and styles get reserved early — especially for large guest counts.'},
-  {step:10,type:'Hair & Makeup', emoji:'💄',  note:'Looking and feeling your best on your wedding day gives you the confidence to enjoy every moment.',    why:'Sought-after artists book out for wedding season. A trial session is also recommended.'},
+  {step:1, type:'Photography',    emoji:'📷', note:'Your photographer captures memories that last a lifetime.',                                              why:'Top photographers book 12+ months ahead. Locking this in early gives you the best selection.'},
+  {step:2, type:'Catering',       emoji:'🍽', note:'Food and drink is often the most talked-about part of a wedding reception.',                             why:'Caterers need lead time for menu planning, sourcing, and staffing for your guest count.'},
+  {step:3, type:'Florist',        emoji:'💐', note:'Flowers set the mood — from the ceremony arch to table centrepieces and your bridal bouquet.',           why:'Florals require detailed planning and sourcing. Book early to secure your preferred style and blooms.'},
+  {step:4, type:'Videography',    emoji:'🎬', note:'A wedding film lets you relive every moment — sound, movement, and emotion — for years to come.',        why:'Great videographers are often booked alongside photographers and fill calendars quickly.'},
+  {step:5, type:'DJ',             emoji:'🎧', note:'Your DJ keeps the energy alive from the first dance to the last song.',                                  why:'Great DJs fill their weekends fast, especially in peak season.'},
+  {step:6, type:'Entertainment',  emoji:'🎶', note:'Pre-drinks entertainment keeps guests engaged while you finish photos — bands, soloists, or acts.',      why:'Live entertainers book up quickly for peak wedding season. Unique acts are limited.'},
+  {step:7, type:'Cake & Desserts',emoji:'🎂', note:'Your cake is a centrepiece and a treat. Custom designs take time and careful planning.',                 why:'Custom wedding cakes require design sessions, tastings, and preparation weeks in advance.'},
+  {step:8, type:'Furniture Rental',emoji:'🛋',note:'Tables, chairs, lounge sets, and dance floors transform a space into your dream setting.',              why:'Popular furniture styles get reserved early, especially for large guest counts.'},
+  {step:9, type:'Hair & Makeup',  emoji:'💄', note:'Looking and feeling your best gives you the confidence to enjoy every moment of your wedding day.',      why:'Sought-after artists book out for wedding season. A trial session is also recommended.'},
 ];
 
-// Typical spend ratios (approximate % of total vendor budget)
+// Additional vendors — not in the primary order but worth budgeting for
+const ADDITIONAL_VENDORS = [
+  {type:'Barista', emoji:'☕', note:'A coffee bar adds a lovely touch during cocktail hour or as an after-dinner treat for guests.'},
+];
+
+// Budget ratios — how a typical wedding vendor budget is divided across categories.
+// Logic: Based on South African wedding industry averages, weighted as follows:
+//   Catering is the largest spend (~30%) as it scales with guest count.
+//   Photography (~18%) and Videography (~12%) are premium services booked early.
+//   Florist (~8%) and Furniture Rental (~7%) are decor essentials.
+//   DJ (~7%) is a reception must-have.
+//   Hair & Makeup (~5%), Entertainment (~5%), Cake & Desserts (~4%) round out the plan.
+//   The remaining ~4% is left as flex budget for additional vendors like Barista.
+// Total of primary categories = 96%, leaving ~4% flex for additional vendors.
 const BUDGET_RATIOS = {
-  'Photography':   0.18,
-  'Catering':      0.30,
-  'Florist':       0.08,
-  'DJ':            0.07,
-  'Entertainment': 0.05,
-  'Videography':   0.12,
+  'Photography':    0.18,
+  'Catering':       0.30,
+  'Florist':        0.08,
+  'DJ':             0.07,
+  'Entertainment':  0.05,
+  'Videography':    0.12,
   'Cake & Desserts':0.04,
-  'Barista':       0.04,
   'Furniture Rental':0.07,
-  'Hair & Makeup': 0.05,
+  'Hair & Makeup':  0.05,
+  // Additional vendors share the remaining ~4%
+  'Barista':        0.04,
 };
 
-function WeddingPlan({onClose, vendors}) {
+// ── WEDDING PLAN VENUE INPUT (Google Maps autocomplete) ───────────────────────
+function WeddingPlanVenueInput({value, onChange}) {
+  const inputRef = useRef();
+  useEffect(()=>{
+    if(inputRef.current && value) inputRef.current.value = value;
+    loadGoogleMaps().then(google=>{
+      if(!inputRef.current) return;
+      const ac = new google.maps.places.Autocomplete(inputRef.current, {
+        types: ['establishment','geocode'],
+        componentRestrictions: {country:'za'},
+      });
+      ac.addListener('place_changed', ()=>{
+        const place = ac.getPlace();
+        if(place.geometry){
+          const name = place.formatted_address || place.name;
+          if(inputRef.current) inputRef.current.value = name;
+          onChange(name);
+        }
+      });
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+  return (
+    <input
+      ref={inputRef}
+      style={inputStyle}
+      defaultValue={value}
+      onChange={e=>onChange(e.target.value)}
+      placeholder="e.g. Babylonstoren, Franschhoek"
+    />
+  );
+}
+
+function WeddingPlan({onClose, vendors: passedVendors}) {
   const [planStep, setPlanStep] = useState('intro');
   const [weddingVenue, setWeddingVenue] = useState('');
   const [totalBudget, setTotalBudget] = useState('');
   const [onReqAverages, setOnReqAverages] = useState({});
+  const [allVendors, setAllVendors] = useState(passedVendors||[]);
 
-  // Fetch admin-set on-request averages from app_settings
+  // Fetch all vendors if none passed (so averages always work)
   useEffect(()=>{
+    if(allVendors.length===0){
+      supaFetch('vendors?select=id,name,type,fixed_rate&order=type')
+        .then(d=>setAllVendors(d||[])).catch(()=>{});
+    }
+    // Fetch admin-set on-request averages
     const keys = [...ON_REQUEST_TYPES].map(t=>`onreq_avg_${t.replace(/[^a-zA-Z0-9]/g,'_')}`);
     supaFetch(`app_settings?key=in.(${keys.map(k=>'"'+k+'"').join(',')})&select=key,value`)
       .then(data=>{
@@ -2229,68 +2284,62 @@ function WeddingPlan({onClose, vendors}) {
   // Calculate average costs from real vendor data + admin on-request averages
   const avgCosts = useMemo(() => {
     const result = {};
-    ALL_TYPES.forEach(type => {
+    [...BOOKING_ORDER.map(o=>o.type), ...ADDITIONAL_VENDORS.map(a=>a.type)].forEach(type => {
       if(ON_REQUEST_TYPES.has(type)){
-        // Use admin-set average if available
         result[type] = onReqAverages[type] || null;
       } else {
-        const typed = vendors.filter(v => v.type === type);
-        if (typed.length > 0) {
-          const tots = typed.map(v => v.fixed_rate || 0).filter(n => n > 0);
-          result[type] = tots.length > 0 ? Math.round(tots.reduce((a,b)=>a+b,0)/tots.length) : null;
-        }
+        const typed = allVendors.filter(v => v.type === type);
+        const tots = typed.map(v => v.fixed_rate || 0).filter(n => n > 0);
+        result[type] = tots.length > 0 ? Math.round(tots.reduce((a,b)=>a+b,0)/tots.length) : null;
       }
     });
     return result;
-  }, [vendors, onReqAverages]);
+  }, [allVendors, onReqAverages]);
 
-  // Recommended spend per category based on budget
   const budget = parseFloat(totalBudget) || 0;
+
+  // Recommended spend — ratios applied to total budget
   const recommendedSpend = useMemo(() => {
     if (!budget) return {};
     const result = {};
-    ALL_TYPES.forEach(type => {
-      result[type] = Math.round(budget * (BUDGET_RATIOS[type] || 0.05));
+    Object.keys(BUDGET_RATIOS).forEach(type => {
+      result[type] = Math.round(budget * BUDGET_RATIOS[type]);
     });
     return result;
   }, [budget]);
 
-  const s = { // shared styles
-    section: {background:'var(--white)',borderRadius:16,boxShadow:'var(--card-shadow)',marginBottom:20,overflow:'hidden'},
-    stepNum: {width:32,height:32,borderRadius:'50%',background:'var(--forest)',color:'var(--gold-light)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:'0.88rem',flexShrink:0},
-    onReqBadge: {fontSize:'0.68rem',background:'rgba(196,130,106,0.12)',color:'var(--rose)',border:'1px solid rgba(196,130,106,0.25)',borderRadius:999,padding:'2px 8px',fontStyle:'italic'},
-  };
+  // Leftover budget after primary categories
+  const primaryTotal = useMemo(()=>{
+    if(!budget) return 0;
+    return BOOKING_ORDER.reduce((sum,o)=>sum+(recommendedSpend[o.type]||0),0);
+  },[recommendedSpend,budget]);
+  const leftover = budget - primaryTotal;
 
+  const cardStyle = {background:'var(--white)',borderRadius:16,boxShadow:'var(--card-shadow)',marginBottom:20,overflow:'hidden'};
+
+  // ── INTRO SCREEN ──────────────────────────────────────────────────────────
   if (planStep === 'intro') return (
     <div style={{minHeight:'100vh',background:'var(--cream)'}}>
       <div style={{background:'var(--white)',borderBottom:'1px solid var(--parchment)',padding:'14px 24px',display:'flex',alignItems:'center',gap:12,position:'sticky',top:0,zIndex:10}}>
         <button onClick={onClose} style={{background:'var(--parchment)',border:'none',borderRadius:7,padding:'6px 12px',cursor:'pointer',fontSize:'0.8rem',color:'var(--mid)'}}>‹ Back</button>
         <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.3rem',color:'var(--forest)',fontWeight:600}}>💍 Wedding Plan</div>
       </div>
-      <div style={{maxWidth:800,margin:'0 auto',padding:'32px 24px 60px'}}>
-        <div style={{textAlign:'center',marginBottom:36}}>
+      <div style={{maxWidth:740,margin:'0 auto',padding:'32px 24px 60px'}}>
+        <div style={{textAlign:'center',marginBottom:32}}>
           <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'2.2rem',color:'var(--forest)',fontWeight:300,marginBottom:8}}>Plan Your Perfect Wedding</div>
-          <p style={{color:'var(--mid)',fontSize:'0.92rem',maxWidth:520,margin:'0 auto',lineHeight:1.7}}>Follow the recommended booking order to secure the best vendors at the best prices — before they're taken.</p>
+          <p style={{color:'var(--mid)',fontSize:'0.9rem',maxWidth:500,margin:'0 auto',lineHeight:1.7}}>Follow the recommended booking order to secure the best vendors — before they're taken.</p>
         </div>
 
-        {/* Booking order diagram */}
-        <div style={{background:'var(--white)',borderRadius:16,boxShadow:'var(--card-shadow)',padding:'24px',marginBottom:32}}>
+        <div style={{background:'var(--white)',borderRadius:16,boxShadow:'var(--card-shadow)',padding:'24px',marginBottom:28}}>
           <div style={{fontSize:'0.72rem',letterSpacing:'0.15em',textTransform:'uppercase',color:'var(--mid)',marginBottom:18,fontWeight:500}}>Recommended Booking Order</div>
-          <div style={{display:'flex',flexDirection:'column',gap:0}}>
-            {BOOKING_ORDER.map((item,idx)=>(
-              <div key={item.step} style={{display:'flex',alignItems:'center',gap:12,padding:'8px 0',borderBottom:idx<BOOKING_ORDER.length-1?'1px solid var(--parchment)':'none'}}>
-                <div style={{...s.stepNum,background:ON_REQUEST_TYPES.has(item.type)?'var(--blush)':idx<3?'var(--forest)':'var(--mid)'}}>{item.step}</div>
-                <div style={{fontSize:'1.1rem',width:24,textAlign:'center'}}>{item.emoji}</div>
-                <div style={{flex:1}}>
-                  <span style={{fontSize:'0.92rem',fontWeight:600,color:'var(--forest)'}}>{item.type}</span>
-                  {ON_REQUEST_TYPES.has(item.type)&&<span style={{...s.onReqBadge,marginLeft:8}}>On Request</span>}
-                </div>
-                <div style={{fontSize:'0.72rem',color:'var(--light)',maxWidth:220,textAlign:'right',lineHeight:1.4,display:'flex',alignItems:'center',gap:6}}>
-                  {idx<3&&<span style={{color:'var(--rose)',fontWeight:600,fontSize:'0.68rem'}}>Book first</span>}
-                </div>
-              </div>
-            ))}
-          </div>
+          {BOOKING_ORDER.map((item,idx)=>(
+            <div key={item.step} style={{display:'flex',alignItems:'center',gap:12,padding:'9px 0',borderBottom:idx<BOOKING_ORDER.length-1?'1px solid var(--parchment)':'none'}}>
+              <div style={{width:28,height:28,borderRadius:'50%',background:'var(--forest)',color:'var(--gold-light)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:'0.8rem',flexShrink:0}}>{item.step}</div>
+              <div style={{fontSize:'1.1rem',width:26,textAlign:'center',flexShrink:0}}>{item.emoji}</div>
+              <div style={{fontSize:'0.92rem',fontWeight:500,color:'var(--charcoal)',flex:1}}>{item.type}</div>
+              {idx<3&&<span style={{fontSize:'0.66rem',color:'var(--rose)',fontWeight:600,background:'rgba(196,130,106,0.1)',padding:'2px 8px',borderRadius:999}}>Book first</span>}
+            </div>
+          ))}
         </div>
 
         <button onClick={()=>setPlanStep('setup')} style={{width:'100%',background:'var(--rose)',color:'var(--white)',border:'none',borderRadius:12,padding:'16px',fontFamily:"'DM Sans',sans-serif",fontSize:'1rem',fontWeight:600,cursor:'pointer',letterSpacing:'0.05em'}}>
@@ -2300,43 +2349,66 @@ function WeddingPlan({onClose, vendors}) {
     </div>
   );
 
+  // ── SETUP SCREEN ─────────────────────────────────────────────────────────
   if (planStep === 'setup') return (
     <div style={{minHeight:'100vh',background:'var(--cream)'}}>
       <div style={{background:'var(--white)',borderBottom:'1px solid var(--parchment)',padding:'14px 24px',display:'flex',alignItems:'center',gap:12,position:'sticky',top:0,zIndex:10}}>
         <button onClick={()=>setPlanStep('intro')} style={{background:'var(--parchment)',border:'none',borderRadius:7,padding:'6px 12px',cursor:'pointer',fontSize:'0.8rem',color:'var(--mid)'}}>‹ Back</button>
         <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.3rem',color:'var(--forest)',fontWeight:600}}>💍 Your Wedding Details</div>
       </div>
-      <div style={{maxWidth:600,margin:'0 auto',padding:'40px 24px 60px'}}>
-        <p style={{color:'var(--mid)',fontSize:'0.9rem',marginBottom:32,lineHeight:1.7}}>Enter your wedding venue and total vendor budget. We'll break it down into recommended spend per category based on industry averages.</p>
+      <div style={{maxWidth:580,margin:'0 auto',padding:'40px 24px 60px'}}>
+        <p style={{color:'var(--mid)',fontSize:'0.9rem',marginBottom:28,lineHeight:1.7}}>Enter your wedding venue and total vendor budget. We'll break it down into a recommended spend per category based on industry averages.</p>
         <div style={{background:'var(--white)',borderRadius:16,boxShadow:'var(--card-shadow)',padding:'28px'}}>
           <div style={{marginBottom:20}}>
             <label style={labelStyle}>Wedding Venue / Location</label>
-            <input style={inputStyle} value={weddingVenue} onChange={e=>setWeddingVenue(e.target.value)} placeholder="e.g. Babylonstoren, Franschhoek"/>
+            <WeddingPlanVenueInput value={weddingVenue} onChange={setWeddingVenue}/>
           </div>
           <div style={{marginBottom:24}}>
             <label style={labelStyle}>Total Vendor Budget (R)</label>
             <input style={inputStyle} type="number" value={totalBudget} onChange={e=>setTotalBudget(e.target.value)} placeholder="e.g. 150000"/>
-            <div style={{fontSize:'0.74rem',color:'var(--light)',marginTop:6}}>This is your total spend across all wedding vendors (excluding venue rental cost).</div>
+            <div style={{fontSize:'0.74rem',color:'var(--light)',marginTop:5}}>Your total spend across all wedding vendors, excluding venue hire costs.</div>
           </div>
-          {totalBudget&&parseInt(totalBudget)>0&&(
-            <div style={{background:'rgba(58,74,63,0.06)',borderRadius:10,padding:'14px 16px',marginBottom:20,border:'1px solid rgba(58,74,63,0.1)'}}>
-              <div style={{fontSize:'0.78rem',fontWeight:600,color:'var(--forest)',marginBottom:8}}>Budget preview</div>
-              {ALL_TYPES.map(type=>{
-                const isOR=ON_REQUEST_TYPES.has(type);
-                return(
-                  <div key={type} style={{display:'flex',justifyContent:'space-between',fontSize:'0.8rem',padding:'4px 0',borderBottom:'1px solid rgba(58,74,63,0.07)',alignItems:'center'}}>
-                    <span style={{color:'var(--mid)'}}>{TYPE_EMOJI[type]} {type}{isOR&&<span style={{fontSize:'0.66rem',color:'var(--rose)',marginLeft:4,fontStyle:'italic'}}> on request</span>}</span>
-                    <span style={{fontWeight:600,color:isOR?'var(--rose)':'var(--forest)'}}>{fmt(Math.round(parseInt(totalBudget)*(BUDGET_RATIOS[type]||0.05)))}</span>
-                  </div>
-                );
-              })}
+
+          {/* Live budget preview */}
+          {budget>0&&(
+            <div style={{background:'rgba(58,74,63,0.05)',borderRadius:10,padding:'14px 16px',marginBottom:20,border:'1px solid rgba(58,74,63,0.1)'}}>
+              <div style={{fontSize:'0.78rem',fontWeight:600,color:'var(--forest)',marginBottom:10}}>Budget breakdown preview</div>
+              {BOOKING_ORDER.map(({type})=>(
+                <div key={type} style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:'0.8rem',padding:'4px 0',borderBottom:'1px solid rgba(58,74,63,0.06)'}}>
+                  <span style={{color:'var(--mid)'}}>{TYPE_EMOJI[type]} {type}{ON_REQUEST_TYPES.has(type)&&<span style={{fontSize:'0.66rem',color:'var(--rose)',marginLeft:4}}>on request</span>}</span>
+                  <span style={{fontWeight:600,color:'var(--forest)'}}>{fmt(Math.round(budget*(BUDGET_RATIOS[type]||0.05)))}</span>
+                </div>
+              ))}
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:'0.8rem',padding:'6px 0 0',marginTop:4,borderTop:'1px solid rgba(58,74,63,0.12)'}}>
+                <span style={{color:'var(--mid)',fontStyle:'italic'}}>+ Additional vendors (Barista etc.)</span>
+                <span style={{fontWeight:600,color:'var(--gold)'}}>{fmt(leftover>0?leftover:Math.round(budget*0.04))}</span>
+              </div>
             </div>
           )}
-          <button
-            onClick={()=>{if(!totalBudget||parseInt(totalBudget)<=0){alert('Please enter a budget to continue.');return;}setPlanStep('plan');}}
+
+          <button onClick={()=>{if(!budget){alert('Please enter a budget to continue.');return;}setPlanStep('plan');}}
             style={{width:'100%',background:'var(--forest)',color:'var(--gold-light)',border:'none',borderRadius:10,padding:'13px',fontFamily:"'DM Sans',sans-serif",fontSize:'0.92rem',fontWeight:500,cursor:'pointer',letterSpacing:'0.04em'}}>
             Build My Wedding Plan →
           </button>
+        </div>
+
+        {/* Budget logic explainer */}
+        <div style={{marginTop:20,background:'var(--white)',borderRadius:12,boxShadow:'var(--card-shadow)',padding:'20px 22px'}}>
+          <div style={{fontSize:'0.78rem',fontWeight:600,color:'var(--forest)',marginBottom:10}}>How we calculate your recommended spend</div>
+          <div style={{fontSize:'0.78rem',color:'var(--mid)',lineHeight:1.7}}>
+            Your budget is divided using industry-standard ratios based on South African wedding averages:
+          </div>
+          <div style={{marginTop:10,display:'flex',flexDirection:'column',gap:4}}>
+            {Object.entries(BUDGET_RATIOS).filter(([t])=>BOOKING_ORDER.some(o=>o.type===t)).map(([type,ratio])=>(
+              <div key={type} style={{display:'flex',justifyContent:'space-between',fontSize:'0.76rem',color:'var(--mid)'}}>
+                <span>{TYPE_EMOJI[type]} {type}</span>
+                <span style={{fontWeight:500,color:'var(--charcoal)'}}>{Math.round(ratio*100)}%</span>
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:10,fontSize:'0.74rem',color:'var(--light)',lineHeight:1.6}}>
+            Catering takes the largest share as it scales with guest count. Photography and videography are premium bookings. The remaining ~4% is set aside for additional vendors like a barista.
+          </div>
         </div>
       </div>
     </div>
@@ -2352,107 +2424,86 @@ function WeddingPlan({onClose, vendors}) {
         </div>
         <div style={{textAlign:'right'}}>
           {weddingVenue&&<div style={{fontSize:'0.76rem',color:'var(--mid)'}}>📍 {weddingVenue}</div>}
-          <div style={{fontSize:'0.82rem',fontWeight:600,color:'var(--rose)'}}>Budget: {fmt(parseInt(totalBudget))}</div>
+          <div style={{fontSize:'0.82rem',fontWeight:600,color:'var(--rose)'}}>Budget: {fmt(budget)}</div>
         </div>
       </div>
 
-      <div style={{maxWidth:860,margin:'0 auto',padding:'28px 24px 60px'}}>
+      <div style={{maxWidth:860,margin:'0 auto',padding:'24px 24px 60px'}}>
         {/* Mini booking order strip */}
-        <div style={{display:'flex',gap:4,overflowX:'auto',paddingBottom:8,marginBottom:28}}>
+        <div style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:8,marginBottom:28,scrollbarWidth:'none'}}>
           {BOOKING_ORDER.map(item=>(
-            <div key={item.step} style={{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',gap:3,width:64}}>
-              <div style={{width:36,height:36,borderRadius:'50%',background:ON_REQUEST_TYPES.has(item.type)?'var(--blush)':'var(--forest)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.92rem'}}>{item.emoji}</div>
-              <div style={{fontSize:'0.58rem',color:'var(--mid)',textAlign:'center',lineHeight:1.3,fontWeight:500}}>{item.type}</div>
+            <div key={item.step} style={{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',gap:4,width:60}}>
+              <div style={{width:40,height:40,borderRadius:'50%',background:'var(--forest)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem'}}>{item.emoji}</div>
+              <div style={{fontSize:'0.58rem',color:'var(--mid)',textAlign:'center',lineHeight:1.3,fontWeight:500,maxWidth:56}}>{item.type}</div>
             </div>
           ))}
         </div>
 
-        {/* One section per booking step */}
-        {BOOKING_ORDER.map((item, idx) => {
+        {/* PRIMARY vendor sections */}
+        {BOOKING_ORDER.map((item) => {
           const isOnReq = ON_REQUEST_TYPES.has(item.type);
-          const catVendors = vendors.filter(v => v.type === item.type);
+          const catVendors = allVendors.filter(v => v.type === item.type);
           const prices = catVendors.filter(v=>!isOnReq).map(v=>v.fixed_rate||0).filter(n=>n>0);
-          const catAvg = prices.length>0 ? Math.round(prices.reduce((a,b)=>a+b,0)/prices.length) : null;
+          const catAvg = avgCosts[item.type];
           const catMin = prices.length>0 ? Math.min(...prices) : null;
           const catMax = prices.length>0 ? Math.max(...prices) : null;
           const recSpend = recommendedSpend[item.type] || 0;
+          const vendorCount = prices.length;
           return (
-            <div key={item.step} style={{...s.section}}>
-              {/* Section header */}
+            <div key={item.type} style={cardStyle}>
               <div style={{background:'var(--forest)',padding:'14px 20px',display:'flex',alignItems:'center',gap:12}}>
-                <div style={{...s.stepNum,background:'rgba(255,255,255,0.15)',color:'var(--gold-light)'}}>{item.step}</div>
-                <div style={{fontSize:'1.4rem'}}>{item.emoji}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.2rem',color:'var(--gold-light)',fontWeight:600}}>{item.type}</div>
-                  {isOnReq&&<span style={{fontSize:'0.68rem',background:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.8)',borderRadius:999,padding:'1px 8px'}}>On Request</span>}
-                </div>
+                <div style={{width:32,height:32,borderRadius:'50%',background:'rgba(255,255,255,0.15)',color:'var(--gold-light)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:'0.88rem',flexShrink:0}}>{item.step}</div>
+                <div style={{fontSize:'1.3rem'}}>{item.emoji}</div>
+                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.2rem',color:'var(--gold-light)',fontWeight:600,flex:1}}>{item.type}</div>
               </div>
-
               <div style={{padding:'18px 20px'}}>
-                {/* Why section */}
-                <div style={{marginBottom:14}}>
-                  <div style={{fontSize:'0.88rem',color:'var(--charcoal)',lineHeight:1.65,marginBottom:6}}>{item.note}</div>
-                  <div style={{fontSize:'0.8rem',color:'var(--mid)',background:'var(--parchment)',borderRadius:8,padding:'8px 12px',lineHeight:1.55}}>
-                    <strong style={{color:'var(--forest)'}}>Why book now:</strong> {item.why}
-                  </div>
+                <div style={{fontSize:'0.88rem',color:'var(--charcoal)',lineHeight:1.65,marginBottom:8}}>{item.note}</div>
+                <div style={{fontSize:'0.8rem',color:'var(--mid)',background:'var(--parchment)',borderRadius:8,padding:'8px 12px',lineHeight:1.55,marginBottom:14}}>
+                  <strong style={{color:'var(--forest)'}}>Why book now:</strong> {item.why}
                 </div>
 
                 {isOnReq ? (
                   <div>
-                    {(avgCosts[item.type]>0||recommendedSpend[item.type]>0) ? (
+                    {(catAvg||recSpend>0)&&(
                       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
                         <div style={{background:'var(--parchment)',borderRadius:10,padding:'14px 16px'}}>
                           <div style={{fontSize:'0.68rem',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--mid)',marginBottom:8}}>Avg. market cost</div>
-                          {avgCosts[item.type] ? (
+                          {catAvg ? (
                             <>
-                              <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.6rem',fontWeight:600,color:'var(--forest)',marginBottom:4}}>{fmt(avgCosts[item.type])}</div>
-                              <div style={{fontSize:'0.71rem',color:'var(--light)'}}>Set by admin · varies by requirements</div>
+                              <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.6rem',fontWeight:600,color:'var(--forest)',marginBottom:4}}>{fmt(catAvg)}</div>
+                              <div style={{fontSize:'0.71rem',color:'var(--light)'}}>Indicative — varies by requirements</div>
                             </>
-                          ) : (
-                            <div style={{fontSize:'0.8rem',color:'var(--light)',fontStyle:'italic'}}>Not set yet</div>
-                          )}
+                          ):<div style={{fontSize:'0.82rem',color:'var(--light)',fontStyle:'italic'}}>Not set yet</div>}
                         </div>
                         <div style={{background:'rgba(58,74,63,0.06)',borderRadius:10,padding:'14px 16px',border:'1px solid rgba(58,74,63,0.1)'}}>
-                          <div style={{fontSize:'0.68rem',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--mid)',marginBottom:8}}>Your recommended spend</div>
-                          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.6rem',fontWeight:600,color:'var(--rose)',marginBottom:4}}>{fmt(recommendedSpend[item.type]||0)}</div>
-                          <div style={{fontSize:'0.72rem',color:'var(--light)'}}>{Math.round((BUDGET_RATIOS[item.type]||0.05)*100)}% of your total budget</div>
-                          {avgCosts[item.type]&&recommendedSpend[item.type]>0&&(
-                            <div style={{fontSize:'0.71rem',marginTop:6,color:recommendedSpend[item.type]>=avgCosts[item.type]?'var(--forest)':'var(--rose)',fontWeight:500}}>
-                              {recommendedSpend[item.type]>=avgCosts[item.type]?'✓ Within range':'⚠ Below average'}
-                            </div>
-                          )}
+                          <div style={{fontSize:'0.68rem',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--mid)',marginBottom:8}}>Recommended spend</div>
+                          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.6rem',fontWeight:600,color:'var(--rose)',marginBottom:4}}>{fmt(recSpend)}</div>
+                          <div style={{fontSize:'0.72rem',color:'var(--light)'}}>{Math.round((BUDGET_RATIOS[item.type]||0.05)*100)}% of your budget</div>
+                          {catAvg&&<div style={{fontSize:'0.71rem',marginTop:5,color:recSpend>=catAvg?'var(--forest)':'var(--rose)',fontWeight:500}}>{recSpend>=catAvg?'✓ Within range':'⚠ Below average'}</div>}
                         </div>
                       </div>
-                    ):null}
-                    <div style={{background:'rgba(196,130,106,0.06)',borderRadius:10,padding:'12px 16px',border:'1px solid rgba(196,130,106,0.18)',fontSize:'0.82rem',color:'var(--mid)',lineHeight:1.6}}>
-                      💌 <strong>Final pricing is on request</strong> — the figures above are market averages for budgeting purposes. Use the <em>Request a Quote</em> feature on any {item.type} vendor page to get your personalised quote.
+                    )}
+                    <div style={{background:'rgba(196,130,106,0.06)',borderRadius:10,padding:'11px 14px',border:'1px solid rgba(196,130,106,0.18)',fontSize:'0.82rem',color:'var(--mid)',lineHeight:1.6}}>
+                      💌 Final pricing is on request — figures above are indicative for budgeting. Use <em>Request a Quote</em> on any {item.type} vendor page.
                     </div>
                   </div>
                 ) : (
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:8}}>
-                    {/* Average cost card */}
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                     <div style={{background:'var(--parchment)',borderRadius:10,padding:'14px 16px'}}>
                       <div style={{fontSize:'0.68rem',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--mid)',marginBottom:8}}>Market average</div>
                       {catAvg ? (
                         <>
                           <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.6rem',fontWeight:600,color:'var(--forest)',marginBottom:4}}>{fmt(catAvg)}</div>
-                          <div style={{fontSize:'0.72rem',color:'var(--light)'}}>Range: {catMin?fmt(catMin):'–'} – {catMax?fmt(catMax):'–'}</div>
-                          <div style={{fontSize:'0.71rem',color:'var(--light)',marginTop:2}}>Based on {prices.length} vendor{prices.length!==1?'s':''} on VowFinds</div>
+                          <div style={{fontSize:'0.72rem',color:'var(--light)',marginBottom:2}}>Range: {catMin?fmt(catMin):'–'} – {catMax?fmt(catMax):'–'}</div>
+                          <div style={{fontSize:'0.71rem',color:'var(--light)'}}>Based on {vendorCount} vendor{vendorCount!==1?'s':''} on VowFinds</div>
                         </>
-                      ) : (
-                        <div style={{fontSize:'0.82rem',color:'var(--light)',fontStyle:'italic'}}>No vendors listed yet</div>
-                      )}
+                      ):<div style={{fontSize:'0.82rem',color:'var(--light)',fontStyle:'italic'}}>No vendors listed yet</div>}
                     </div>
-                    {/* Recommended spend card */}
                     <div style={{background:'rgba(58,74,63,0.06)',borderRadius:10,padding:'14px 16px',border:'1px solid rgba(58,74,63,0.1)'}}>
-                      <div style={{fontSize:'0.68rem',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--mid)',marginBottom:8}}>Your recommended spend</div>
+                      <div style={{fontSize:'0.68rem',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--mid)',marginBottom:8}}>Recommended spend</div>
                       <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.6rem',fontWeight:600,color:'var(--rose)',marginBottom:4}}>{fmt(recSpend)}</div>
-                      <div style={{fontSize:'0.72rem',color:'var(--light)'}}>{Math.round((BUDGET_RATIOS[item.type]||0.05)*100)}% of your total budget</div>
-                      {catAvg&&recSpend>0&&(
-                        <div style={{fontSize:'0.71rem',marginTop:6,color:recSpend>=catAvg?'var(--forest)':'var(--rose)',fontWeight:500}}>
-                          {recSpend>=catAvg?'✓ Comfortably within range':'⚠ Below market average'}
-                        </div>
-                      )}
+                      <div style={{fontSize:'0.72rem',color:'var(--light)'}}>{Math.round((BUDGET_RATIOS[item.type]||0.05)*100)}% of your budget</div>
+                      {catAvg&&recSpend>0&&<div style={{fontSize:'0.71rem',marginTop:5,color:recSpend>=catAvg?'var(--forest)':'var(--rose)',fontWeight:500}}>{recSpend>=catAvg?'✓ Within range':'⚠ Below average'}</div>}
                     </div>
                   </div>
                 )}
@@ -2460,6 +2511,58 @@ function WeddingPlan({onClose, vendors}) {
             </div>
           );
         })}
+
+        {/* ADDITIONAL VENDORS section — leftover budget */}
+        {budget>0&&(
+          <div style={cardStyle}>
+            <div style={{background:'linear-gradient(135deg,var(--gold),#b8932a)',padding:'14px 20px',display:'flex',alignItems:'center',gap:12}}>
+              <div style={{fontSize:'1.3rem'}}>✨</div>
+              <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.2rem',color:'var(--white)',fontWeight:600,flex:1}}>Additional Vendors</div>
+              <div style={{background:'rgba(255,255,255,0.2)',borderRadius:8,padding:'4px 12px'}}>
+                <div style={{fontSize:'0.68rem',color:'rgba(255,255,255,0.8)'}}>Flex budget</div>
+                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1rem',color:'var(--white)',fontWeight:600}}>{fmt(leftover>0?leftover:Math.round(budget*0.04))}</div>
+              </div>
+            </div>
+            <div style={{padding:'18px 20px'}}>
+              <p style={{fontSize:'0.86rem',color:'var(--mid)',lineHeight:1.65,marginBottom:16}}>
+                Once your primary vendors are secured, consider these finishing touches. Your flex budget of <strong>{fmt(leftover>0?leftover:Math.round(budget*0.04))}</strong> can be allocated here.
+              </p>
+              {ADDITIONAL_VENDORS.map(({type,emoji,note})=>{
+                const catVendors2 = allVendors.filter(v=>v.type===type);
+                const prices2 = catVendors2.map(v=>v.fixed_rate||0).filter(n=>n>0);
+                const catAvg2 = prices2.length>0?Math.round(prices2.reduce((a,b)=>a+b,0)/prices2.length):null;
+                const catMin2 = prices2.length>0?Math.min(...prices2):null;
+                const catMax2 = prices2.length>0?Math.max(...prices2):null;
+                const recAdditional = Math.round(budget*(BUDGET_RATIOS[type]||0.04));
+                return(
+                  <div key={type} style={{borderRadius:12,border:'1px solid var(--parchment)',padding:'14px 16px',marginBottom:8}}>
+                    <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+                      <div style={{fontSize:'1.2rem'}}>{emoji}</div>
+                      <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.05rem',fontWeight:600,color:'var(--forest)'}}>{type}</div>
+                    </div>
+                    <div style={{fontSize:'0.82rem',color:'var(--mid)',marginBottom:12,lineHeight:1.55}}>{note}</div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                      <div style={{background:'var(--parchment)',borderRadius:8,padding:'11px 13px'}}>
+                        <div style={{fontSize:'0.66rem',textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--mid)',marginBottom:6}}>Market average</div>
+                        {catAvg2 ? (
+                          <>
+                            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.4rem',fontWeight:600,color:'var(--forest)',marginBottom:2}}>{fmt(catAvg2)}</div>
+                            <div style={{fontSize:'0.69rem',color:'var(--light)'}}>Range: {catMin2?fmt(catMin2):'–'} – {catMax2?fmt(catMax2):'–'}</div>
+                          </>
+                        ):<div style={{fontSize:'0.8rem',color:'var(--light)',fontStyle:'italic'}}>No vendors listed yet</div>}
+                      </div>
+                      <div style={{background:'rgba(58,74,63,0.05)',borderRadius:8,padding:'11px 13px',border:'1px solid rgba(58,74,63,0.08)'}}>
+                        <div style={{fontSize:'0.66rem',textTransform:'uppercase',letterSpacing:'0.1em',color:'var(--mid)',marginBottom:6}}>Suggested spend</div>
+                        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.4rem',fontWeight:600,color:'var(--rose)',marginBottom:2}}>{fmt(recAdditional)}</div>
+                        <div style={{fontSize:'0.69rem',color:'var(--light)'}}>{Math.round((BUDGET_RATIOS[type]||0.04)*100)}% of your budget</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

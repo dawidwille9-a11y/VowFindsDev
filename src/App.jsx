@@ -1,6 +1,17 @@
 // VowFinds – Supabase + Google Maps + Auth
 
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
+// ── MOBILE DETECTION ─────────────────────────────────────────────────────────
+function useIsMobile() {
+  const [mobile, setMobile] = React.useState(() => window.innerWidth < 768);
+  React.useEffect(() => {
+    const handler = () => setMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return mobile;
+}
+
 
 // ── CREDENTIALS ───────────────────────────────────────────────────────────────
 const SUPABASE_URL      = 'https://pvpmmzpzeruzoxvwyhqc.supabase.co';
@@ -936,7 +947,7 @@ function LoginModal({onLogin, onClose}) {
 const VendorCard=memo(function VendorCard({vendor,unavail,dateFrom,dateTo,onClick,onRequestQuote,customerId=null,onFav=false}) {
   const travel=(vendor.distance_km||0)*(vendor.per_km_rate||0),overnight=(vendor.distance_km||0)>(vendor.overnight_threshold_km||80)?(vendor.overnight_fee||0):0,total=(vendor.fixed_rate||0)+travel+overnight,primaryImg=vendor.images?.[0]?.url;
   return (
-    <div onClick={onClick} style={{background:'var(--white)',borderRadius:16,overflow:'hidden',boxShadow:'var(--card-shadow)',flex:'0 0 288px',width:288,position:'relative',cursor:'pointer',transition:'box-shadow 0.25s, transform 0.25s',filter:unavail?'saturate(0.3) opacity(0.75)':'none'}}
+    <div onClick={onClick} className="vf-vendor-card" style={{background:'var(--white)',borderRadius:16,overflow:'hidden',boxShadow:'var(--card-shadow)',flex:'0 0 288px',width:288,position:'relative',cursor:'pointer',transition:'box-shadow 0.25s, transform 0.25s',filter:unavail?'saturate(0.3) opacity(0.75)':'none'}}
       onMouseEnter={e=>{if(!unavail){e.currentTarget.style.transform='translateY(-4px)';e.currentTarget.style.boxShadow='var(--card-shadow-hover)';}}}
       onMouseLeave={e=>{e.currentTarget.style.transform='';e.currentTarget.style.boxShadow='var(--card-shadow)';}}>
       {unavail&&<div style={{position:'absolute',inset:0,background:'rgba(250,246,241,0.85)',borderRadius:16,zIndex:5,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8,backdropFilter:'blur(3px)'}}>
@@ -998,7 +1009,7 @@ function VendorDetail({vendor,dateFrom,dateTo,venueLabel,venueLatLng,onBack,onRe
     <div style={{background:'var(--cream)',minHeight:'100vh'}}>
       <button onClick={onBack} style={{display:'inline-flex',alignItems:'center',gap:8,margin:'24px 32px 0',background:'none',border:'none',fontFamily:"'DM Sans',sans-serif",fontSize:'0.82rem',color:'var(--mid)',cursor:'pointer',padding:0}}><span style={{fontSize:'1.1rem'}}>‹</span> Back to results</button>
       {isUnavail&&<div style={{display:'flex',alignItems:'center',gap:12,background:'#f5e8e4',border:'1.5px solid #e0b8a8',borderRadius:12,padding:'14px 20px',margin:'20px 32px 0'}}><span style={{fontSize:'1.4rem'}}>📅</span><div><div style={{fontSize:'0.88rem',color:'var(--deep-rose)',fontWeight:500}}>Unavailable on your wedding date</div><div style={{fontSize:'0.78rem',color:'var(--rose)'}}>This vendor is already booked during your selected dates.</div></div></div>}
-      <div style={{position:'relative',height:300,overflow:'hidden',marginTop:16,background:galleryImgs[0]?.url?`url(${galleryImgs[0].url}) center/cover`:`linear-gradient(140deg,${vendor.color||'#c8a87a'}ff,${vendor.color||'#c8a87a'}88)`}}>
+      <div className="vf-vendor-detail-hero" style={{position:'relative',height:300,overflow:'hidden',marginTop:16,background:galleryImgs[0]?.url?`url(${galleryImgs[0].url}) center/cover`:`linear-gradient(140deg,${vendor.color||'#c8a87a'}ff,${vendor.color||'#c8a87a'}88)`}}>
         <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(22,32,24,0.88) 0%,rgba(22,32,24,0.08) 60%)'}}/>
         <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'28px 32px'}}>
           <div style={{display:'inline-block',background:'rgba(201,169,110,0.18)',border:'1px solid var(--gold)',color:'var(--gold-light)',fontSize:'0.68rem',letterSpacing:'0.14em',textTransform:'uppercase',padding:'4px 12px',borderRadius:999,marginBottom:10}}>{vendor.type}</div>
@@ -1006,7 +1017,7 @@ function VendorDetail({vendor,dateFrom,dateTo,venueLabel,venueLatLng,onBack,onRe
           <div style={{fontSize:'0.82rem',color:'rgba(250,246,241,0.65)'}}>📍 {vendor.location}{venueLabel&&vendor.distance_km?` · ${vendor.distance_km} km from ${venueLabel}`:''}</div>
         </div>
       </div>
-      <div style={{maxWidth:1040,margin:'0 auto',padding:'32px 32px 60px',display:'grid',gridTemplateColumns:'1fr 340px',gap:36}}>
+      <div className="vf-vendor-detail-grid" style={{maxWidth:1040,margin:'0 auto',padding:'32px 32px 60px',display:'grid',gridTemplateColumns:'1fr 340px',gap:36}}>
         <div>
           <section style={{marginBottom:28}}><h3 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.3rem',color:'var(--forest)',marginBottom:14,paddingBottom:10,borderBottom:'1px solid var(--parchment)'}}>About this vendor</h3><p style={{fontSize:'0.92rem',color:'var(--mid)',lineHeight:1.85}}>{vendor.description} {vendor.extra_info}</p></section>
           {galleryImgs.length>0&&<section style={{marginBottom:28}}><h3 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.3rem',color:'var(--forest)',marginBottom:14,paddingBottom:10,borderBottom:'1px solid var(--parchment)'}}>Gallery</h3><div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>{galleryImgs.slice(0,4).map((img,i)=><div key={i} style={{borderRadius:10,height:90,background:img.url?`url(${img.url}) center/cover`:`linear-gradient(${140+i*30}deg,${vendor.color||'#c8a87a'}dd,${vendor.color||'#c8a87a'}44)`}}/>)}</div></section>}
@@ -1035,7 +1046,7 @@ function VendorDetail({vendor,dateFrom,dateTo,venueLabel,venueLatLng,onBack,onRe
           )}
         </div>
         <div>
-          <div style={{background:'var(--white)',borderRadius:16,padding:24,boxShadow:'var(--card-shadow)',position:'sticky',top:80}}>
+          <div className="vf-vendor-detail-sticky" style={{background:'var(--white)',borderRadius:16,padding:24,boxShadow:'var(--card-shadow)',position:'sticky',top:80}}>
             <h3 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.25rem',color:'var(--forest)',marginBottom:4}}>
               {isOnRequest(vendor)?'Request a Quote':'Pricing Estimate'}
             </h3>
@@ -2172,22 +2183,22 @@ function CustomerBrowseView({user,venue,setVenue,venueLatLng,setVenueLatLng,date
   return(
     <div>
       {/* Hero — identical layout to public browse */}
-      <div style={{background:'linear-gradient(160deg,var(--forest) 0%,#2a3830 60%,#1e2820 100%)',position:'relative',overflow:'hidden',padding:'52px 24px 48px',display:'flex',flexDirection:'column',alignItems:'center'}}>
+      <div className="vf-hero-padding" style={{background:'linear-gradient(160deg,var(--forest) 0%,#2a3830 60%,#1e2820 100%)',position:'relative',overflow:'hidden',padding:'52px 24px 48px',display:'flex',flexDirection:'column',alignItems:'center'}}>
         <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse 70% 50% at 50% 100%,rgba(201,169,110,0.1) 0%,transparent 70%)',pointerEvents:'none'}}/>
         <div style={{position:'absolute',top:-120,right:-120,width:400,height:400,borderRadius:'50%',background:'rgba(255,255,255,0.03)',pointerEvents:'none'}}/>
         <div style={{position:'absolute',bottom:-80,left:-80,width:280,height:280,borderRadius:'50%',background:'rgba(201,169,110,0.05)',pointerEvents:'none'}}/>
 
         {/* Eyebrow */}
         <div style={{fontSize:'0.7rem',letterSpacing:'0.25em',textTransform:'uppercase',color:'var(--gold)',marginBottom:10,position:'relative',zIndex:2}}>Your wedding, your way</div>
-        <h1 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(2.2rem,4vw,3.6rem)',fontWeight:300,color:'var(--cream)',lineHeight:1.15,marginBottom:8,textAlign:'center',position:'relative',zIndex:2}}>
+        <h1 className="vf-hero-headline" style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(2.2rem,4vw,3.6rem)',fontWeight:300,color:'var(--cream)',lineHeight:1.15,marginBottom:8,textAlign:'center',position:'relative',zIndex:2}}>
           Find the <em style={{fontStyle:'italic',color:'var(--blush)'}}>perfect</em> vendors for your special day
         </h1>
-        <p style={{color:'rgba(250,246,241,0.5)',fontSize:'0.9rem',fontWeight:300,lineHeight:1.6,marginBottom:32,textAlign:'center',maxWidth:500,position:'relative',zIndex:2}}>
+        <p className="vf-hero-sub" style={{color:'rgba(250,246,241,0.5)',fontSize:'0.9rem',fontWeight:300,lineHeight:1.6,marginBottom:32,textAlign:'center',maxWidth:500,position:'relative',zIndex:2}}>
           Enter your venue and wedding window — we'll show real availability and travel costs.
         </p>
 
         {/* Search box */}
-        <div style={{background:'var(--white)',borderRadius:20,padding:'28px 32px',width:'100%',maxWidth:780,boxShadow:'0 16px 60px rgba(0,0,0,0.28)',position:'relative',zIndex:2,marginBottom:16}}>
+        <div className="vf-search-box" style={{background:'var(--white)',borderRadius:20,padding:'28px 32px',width:'100%',maxWidth:780,boxShadow:'0 16px 60px rgba(0,0,0,0.28)',position:'relative',zIndex:2,marginBottom:16}}>
           <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr',gap:14,marginBottom:16,alignItems:'end'}}>
             <div>
               <label style={{fontSize:'0.68rem',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--mid)',marginBottom:5,display:'block'}}>Venue Location</label>
@@ -2235,7 +2246,7 @@ function CustomerBrowseView({user,venue,setVenue,venueLatLng,setVenueLatLng,date
       {/* Results */}
       {searched&&(
         <div style={{padding:'32px 0 60px'}}>
-          <div style={{padding:'0 28px 20px',maxWidth:1200,margin:'0 auto',display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
+          <div className="vf-results-header" style={{padding:'0 28px 20px',maxWidth:1200,margin:'0 auto',display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
             <div>
               <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.8rem',fontWeight:400,color:'var(--forest)'}}>Vendors near <span style={{fontStyle:'italic',color:'var(--rose)'}}>{venue}</span>{dateFrom&&<span style={{fontSize:'1.1rem',color:'var(--mid)',fontStyle:'normal'}}> · {formatDateDisplay(dateFrom)}{dateTo&&dateTo!==dateFrom?' – '+formatDateDisplay(dateTo):''}</span>}</h2>
               <p style={{color:'var(--mid)',fontSize:'0.84rem',marginTop:3}}>{loading?(calcProgress||'Loading…'):loadError?loadError:'Greyed-out vendors are booked on your dates.'}</p>
@@ -2452,8 +2463,8 @@ export default function VowFinds() {
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           {view==='detail'&&<button onClick={goBack} style={{display:'flex',alignItems:'center',gap:4,background:'rgba(255,255,255,0.1)',border:'none',borderRadius:6,padding:'5px 12px',fontSize:'0.76rem',color:'rgba(255,255,255,0.8)',cursor:'pointer'}}>‹ Back</button>}
-          <button onClick={()=>setShowCustomerAuth(true)} style={{background:'none',border:'1px solid rgba(255,255,255,0.2)',borderRadius:6,color:'rgba(255,255,255,0.6)',fontFamily:"'DM Sans',sans-serif",fontSize:'0.75rem',padding:'5px 12px',cursor:'pointer'}}>Customer Login</button>
-          <button onClick={()=>setShowLoginModal(true)} style={{background:'rgba(201,169,110,0.15)',border:'1px solid rgba(201,169,110,0.35)',borderRadius:6,color:'var(--gold-light)',fontFamily:"'DM Sans',sans-serif",fontSize:'0.75rem',padding:'5px 12px',cursor:'pointer'}}>Vendor Login</button>
+          <button className="vf-nav-login-btns" onClick={()=>setShowCustomerAuth(true)} style={{background:'none',border:'1px solid rgba(255,255,255,0.2)',borderRadius:6,color:'rgba(255,255,255,0.6)',fontFamily:"'DM Sans',sans-serif",fontSize:'0.75rem',padding:'5px 12px',cursor:'pointer'}}>Customer Login</button>
+          <button className="vf-nav-login-btns" onClick={()=>setShowLoginModal(true)} style={{background:'rgba(201,169,110,0.15)',border:'1px solid rgba(201,169,110,0.35)',borderRadius:6,color:'var(--gold-light)',fontFamily:"'DM Sans',sans-serif",fontSize:'0.75rem',padding:'5px 12px',cursor:'pointer'}}>Vendor Login</button>
         </div>
       </nav>
       {/* Public hamburger menu */}
@@ -2487,7 +2498,7 @@ export default function VowFinds() {
             position:'relative',overflow:'hidden',
             padding:'52px 24px 48px',
             display:'flex',flexDirection:'column',alignItems:'center',
-          }}>
+          }} className="vf-hero-padding">
             {/* Decorative background glow */}
             <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse 70% 50% at 50% 100%,rgba(201,169,110,0.1) 0%,transparent 70%)',pointerEvents:'none'}}/>
             <div style={{position:'absolute',top:-120,right:-120,width:400,height:400,borderRadius:'50%',background:'rgba(255,255,255,0.03)',pointerEvents:'none'}}/>
@@ -2497,16 +2508,16 @@ export default function VowFinds() {
             <div style={{fontSize:'0.7rem',letterSpacing:'0.25em',textTransform:'uppercase',color:'var(--gold)',marginBottom:10,position:'relative',zIndex:2}}>Your wedding, your way</div>
 
             {/* Headline */}
-            <h1 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(2.2rem,4vw,3.6rem)',fontWeight:300,color:'var(--cream)',lineHeight:1.15,marginBottom:8,textAlign:'center',position:'relative',zIndex:2}}>
+            <h1 className="vf-hero-headline" style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(2.2rem,4vw,3.6rem)',fontWeight:300,color:'var(--cream)',lineHeight:1.15,marginBottom:8,textAlign:'center',position:'relative',zIndex:2}}>
               Find the <em style={{fontStyle:'italic',color:'var(--blush)'}}>perfect</em> vendors for your special day
             </h1>
-            <p style={{color:'rgba(250,246,241,0.5)',fontSize:'0.9rem',fontWeight:300,lineHeight:1.6,marginBottom:32,textAlign:'center',maxWidth:500,position:'relative',zIndex:2}}>
+            <p className="vf-hero-sub" style={{color:'rgba(250,246,241,0.5)',fontSize:'0.9rem',fontWeight:300,lineHeight:1.6,marginBottom:32,textAlign:'center',maxWidth:500,position:'relative',zIndex:2}}>
               Enter your venue and wedding window — we'll show real availability and travel costs.
             </p>
 
             {/* ── Main search box ── */}
-            <div style={{background:'var(--white)',borderRadius:20,padding:'28px 32px',width:'100%',maxWidth:780,boxShadow:'0 16px 60px rgba(0,0,0,0.28)',position:'relative',zIndex:2,marginBottom:16}}>
-              <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr',gap:14,marginBottom:16,alignItems:'end'}}>
+            <div className="vf-search-box" style={{background:'var(--white)',borderRadius:20,padding:'28px 32px',width:'100%',maxWidth:780,boxShadow:'0 16px 60px rgba(0,0,0,0.28)',position:'relative',zIndex:2,marginBottom:16}}>
+              <div className="vf-search-grid" style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr',gap:14,marginBottom:16,alignItems:'end'}}>
                 {/* Venue */}
                 <div>
                   <label style={{fontSize:'0.68rem',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--mid)',marginBottom:5,display:'block'}}>Venue Location</label>
@@ -2549,6 +2560,11 @@ export default function VowFinds() {
               }}>
                 {loading?(calcProgress||'Loading vendors…'):'Search Vendors'}
               </button>
+              {/* Mobile login hint */}
+              <div className="vf-mobile-only" style={{textAlign:'center',marginTop:14,paddingTop:14,borderTop:'1px solid var(--parchment)',display:'flex',gap:8,justifyContent:'center'}}>
+                <button onClick={()=>setShowCustomerAuth(true)} style={{flex:1,background:'var(--forest)',color:'var(--gold-light)',border:'none',borderRadius:8,padding:'10px',fontSize:'0.82rem',fontWeight:500,cursor:'pointer'}}>👤 Customer Login</button>
+                <button onClick={()=>setShowLoginModal(true)} style={{flex:1,background:'rgba(201,169,110,0.1)',color:'var(--forest)',border:'1px solid rgba(201,169,110,0.3)',borderRadius:8,padding:'10px',fontSize:'0.82rem',fontWeight:500,cursor:'pointer'}}>🏪 Vendor Login</button>
+              </div>
             </div>
 
             {/* ── Category filter ── */}
@@ -2574,7 +2590,7 @@ export default function VowFinds() {
               </div>
 
               {/* Category pills box */}
-              <div style={{
+              <div className="vf-filter-box" style={{
                 background:'rgba(255,255,255,0.06)',
                 border:'1px solid rgba(255,255,255,0.13)',
                 borderRadius:14,
@@ -2651,5 +2667,31 @@ function GlobalStyles(){return(
     input:focus,select:focus,textarea:focus{border-color:var(--rose)!important;}
     ::-webkit-scrollbar{display:none;}
     .pac-container{z-index:9999!important;font-family:'DM Sans',sans-serif;}
+    /* ── Responsive ── */
+    @media(max-width:767px){
+      .vf-nav-login-btns{display:none!important;}
+      .vf-hero-padding{padding:32px 16px 28px!important;}
+      .vf-hero-headline{font-size:1.9rem!important;}
+      .vf-hero-sub{display:none!important;}
+      .vf-search-box{padding:18px 16px!important;border-radius:14px!important;}
+      .vf-search-grid{grid-template-columns:1fr!important;gap:10px!important;}
+      .vf-filter-box{padding:10px 12px!important;}
+      .vf-filter-pills{gap:6px!important;}
+      .vf-filter-pill{padding:5px 10px!important;font-size:0.75rem!important;}
+      .vf-lane-scroll{gap:12px!important;padding:0 16px 12px!important;}
+      .vf-vendor-card{flex:0 0 260px!important;width:260px!important;}
+      .vf-results-header{padding:0 16px 16px!important;}
+      .vf-results-title{font-size:1.4rem!important;}
+      .vf-vendor-detail-grid{grid-template-columns:1fr!important;}
+      .vf-vendor-detail-sticky{position:static!important;}
+      .vf-vendor-detail-hero{height:220px!important;}
+      .vf-vendor-detail-pad{padding:20px 16px 40px!important;}
+      .vf-hero-sub{margin-bottom:20px!important;}
+      .vf-search-box{margin-bottom:12px!important;}
+      nav button span, nav button svg{pointer-events:none;}
+    }
+    @media(min-width:768px){
+      .vf-mobile-only{display:none!important;}
+    }
   `}</style>
 );}

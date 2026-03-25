@@ -129,23 +129,50 @@ function loadGoogleMaps() {
   });
 }
 
-async function getDistanceKm(origin, dest) {
+// Haversine fallback for a single pair
+function haversineKm(origin, dest) {
+  const R=6371, dLat=(dest.lat-origin.lat)*Math.PI/180, dLng=(dest.lng-origin.lng)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(origin.lat*Math.PI/180)*Math.cos(dest.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+  return Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
+}
+
+// Batch distance lookup — ONE API call for up to 25 vendors at once
+async function getBatchDistancesKm(origin, vendors) {
   await loadGoogleMaps();
-  return new Promise((resolve) => {
-    new window.google.maps.DistanceMatrixService().getDistanceMatrix({
-      origins: [new window.google.maps.LatLng(origin.lat, origin.lng)],
-      destinations: [new window.google.maps.LatLng(dest.lat, dest.lng)],
-      travelMode: window.google.maps.TravelMode.DRIVING,
-    }, (res, status) => {
-      if (status === 'OK') {
-        resolve(Math.round((res.rows[0]?.elements[0]?.distance?.value || 0) / 1000));
-      } else {
-        const R = 6371, dLat = (dest.lat-origin.lat)*Math.PI/180, dLng = (dest.lng-origin.lng)*Math.PI/180;
-        const a = Math.sin(dLat/2)**2 + Math.cos(origin.lat*Math.PI/180)*Math.cos(dest.lat*Math.PI/180)*Math.sin(dLng/2)**2;
-        resolve(Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))));
-      }
+  const BATCH = 25;
+  const results = new Array(vendors.length).fill(0);
+  for (let i = 0; i < vendors.length; i += BATCH) {
+    const chunk = vendors.slice(i, i + BATCH);
+    const dests = chunk.filter(v => v.lat && v.lng)
+      .map(v => new window.google.maps.LatLng(v.lat, v.lng));
+    if (dests.length === 0) continue;
+    await new Promise(resolve => {
+      new window.google.maps.DistanceMatrixService().getDistanceMatrix({
+        origins: [new window.google.maps.LatLng(origin.lat, origin.lng)],
+        destinations: dests,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      }, (res, status) => {
+        let destIdx = 0;
+        chunk.forEach((v, ci) => {
+          if (!v.lat || !v.lng) { results[i + ci] = 0; return; }
+          if (status === 'OK') {
+            results[i + ci] = Math.round((res.rows[0]?.elements[destIdx]?.distance?.value || 0) / 1000);
+          } else {
+            results[i + ci] = haversineKm(origin, v);
+          }
+          destIdx++;
+        });
+        resolve();
+      });
     });
-  });
+  }
+  return results; // array of km values, same order as vendors
+}
+
+// Keep single version for backward compat
+async function getDistanceKm(origin, dest) {
+  const [km] = await getBatchDistancesKm(origin, [dest]);
+  return km;
 }
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
@@ -1167,7 +1194,7 @@ function DateRangePicker({dateFrom, dateTo, setDateFrom, setDateTo}) {
 const VendorCard=memo(function VendorCard({vendor,unavail,dateFrom,dateTo,onClick,onRequestQuote,customerId=null,onFav=false}) {
   const travel=(vendor.distance_km||0)*(vendor.per_km_rate||0),overnight=(vendor.distance_km||0)>(vendor.overnight_threshold_km||80)?(vendor.overnight_fee||0):0,total=(vendor.fixed_rate||0)+travel+overnight,primaryImg=vendor.images?.[0]?.url;
   return (
-    <div onClick={onClick} className="vf-vendor-card" style={{background:'var(--white)',borderRadius:16,overflow:'hidden',boxShadow:'var(--card-shadow)',flex:'0 0 288px',width:288,position:'relative',cursor:'pointer',transition:'box-shadow 0.25s, transform 0.25s',filter:unavail?'saturate(0.3) opacity(0.75)':'none'}}
+    <div onClick={onClick} className="vf-vendor-card" style={{background:'var(--cream)',borderRadius:16,overflow:'hidden',boxShadow:'var(--card-shadow)',flex:'0 0 288px',width:288,position:'relative',cursor:'pointer',transition:'box-shadow 0.25s, transform 0.25s',filter:unavail?'saturate(0.3) opacity(0.75)':'none'}}
       onMouseEnter={e=>{if(!unavail){e.currentTarget.style.transform='translateY(-4px)';e.currentTarget.style.boxShadow='var(--card-shadow-hover)';}}}
       onMouseLeave={e=>{e.currentTarget.style.transform='';e.currentTarget.style.boxShadow='var(--card-shadow)';}}>
       {unavail&&<div style={{position:'absolute',inset:0,background:'rgba(250,246,241,0.85)',borderRadius:16,zIndex:5,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8,backdropFilter:'blur(3px)'}}>
@@ -2077,13 +2104,10 @@ function ScenarioBuilder({user,vendors:passedVendors,onClose}) {
       // Re-calculate distances for each vendor from this scenario's venue
       let scenVendors=allVendors;
       if(sc.venueLatLng){
-        scenVendors=await Promise.all(allVendors.map(async v=>{
-          if(!v.lat||!v.lng)return v;
-          try{
-            const km=await getDistanceKm(sc.venueLatLng,{lat:v.lat,lng:v.lng});
-            return{...v,distance_km:km};
-          }catch{return v;}
-        }));
+        try{
+          const kms=await getBatchDistancesKm(sc.venueLatLng,allVendors);
+          scenVendors=allVendors.map((v,i)=>({...v,distance_km:kms[i]||0}));
+        }catch{scenVendors=allVendors;}
       }
 
       const availVendors={};
@@ -2409,16 +2433,11 @@ function CustomerBrowseView({user,venue,setVenue,venueLatLng,setVenueLatLng,date
       const data=await supaFetch('vendors?select=*,images:vendor_images(*),unavail_dates:vendor_unavailable_dates(date)&order=type,name');
       if(latLng){
         setCalcProgress('Calculating distances…');
-        // Batch distance calculations - limit concurrency to avoid rate limits
-        const updated=[];
-        for(let i=0;i<data.length;i++){
-          const v=data[i];
-          if(v.lat&&v.lng){
-            try{const km=await getDistanceKm(latLng,{lat:v.lat,lng:v.lng});updated.push({...v,distance_km:km});}
-            catch{updated.push(v);}
-          }else updated.push(v);
-        }
-        setVendors(updated);
+        try{
+          const kms=await getBatchDistancesKm(latLng,data);
+          const updated=data.map((v,i)=>({...v,distance_km:kms[i]||0}));
+          setVendors(updated);
+        }catch{setVendors(data);}
       }else setVendors(data);
       setCalcProgress('');
     }catch(e){setLoadError('Could not load vendors: '+e.message);}
@@ -2667,7 +2686,14 @@ export default function VowFinds() {
     setLoading(true);setLoadError('');setCalcProgress('');
     try{
       const data=await supaFetch('vendors?select=*,images:vendor_images(*),unavail_dates:vendor_unavailable_dates(date)&order=type,name');
-      if(latLng){setCalcProgress('Calculating distances…');const updated=await Promise.all(data.map(async v=>{if(v.lat&&v.lng){try{const km=await getDistanceKm(latLng,{lat:v.lat,lng:v.lng});return{...v,distance_km:km};}catch{return v;}}return v;}));setVendors(updated);}
+      if(latLng){
+        setCalcProgress('Calculating distances…');
+        try{
+          const kms=await getBatchDistancesKm(latLng,data);
+          const updated=data.map((v,i)=>({...v,distance_km:kms[i]||0}));
+          setVendors(updated);
+        }catch{setVendors(data);}
+      }
       else setVendors(data);
       setCalcProgress('');
     }catch(e){setLoadError('Could not load vendors: '+e.message);}

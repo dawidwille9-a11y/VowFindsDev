@@ -176,14 +176,14 @@ async function getDistanceKm(origin, dest) {
 }
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
-const ALL_TYPES  = ['Photography','Catering','Florist','DJ','Entertainment','Videography','Cake & Desserts','Barista'];
-const TYPE_EMOJI = {'Photography':'📷','Catering':'🍽','Florist':'💐','DJ':'🎧','Entertainment':'🎶','Videography':'🎬','Cake & Desserts':'🎂','Barista':'☕'};
-const TYPE_COLOR = {'Photography':'#c4826a','Catering':'#6a8fa8','Florist':'#8faa6a','DJ':'#9b6aaa','Entertainment':'#aa8f6a','Videography':'#6a9baa','Cake & Desserts':'#aa6a8f','Barista':'#8b5e3c'};
+const ALL_TYPES  = ['Photography','Catering','Florist','DJ','Entertainment','Videography','Cake & Desserts','Barista','Furniture Rental','Hair & Makeup'];
+const TYPE_EMOJI = {'Photography':'📷','Catering':'🍽','Florist':'💐','DJ':'🎧','Entertainment':'🎶','Videography':'🎬','Cake & Desserts':'🎂','Barista':'☕','Furniture Rental':'🛋','Hair & Makeup':'💄'};
+const TYPE_COLOR = {'Photography':'#c4826a','Catering':'#6a8fa8','Florist':'#8faa6a','DJ':'#9b6aaa','Entertainment':'#aa8f6a','Videography':'#6a9baa','Cake & Desserts':'#aa6a8f','Barista':'#8b5e3c','Furniture Rental':'#7a8f6a','Hair & Makeup':'#aa6a8a'};
 const MONTHS     = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DOWS       = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 
 // ── ON-REQUEST TYPES & QUESTIONNAIRES ────────────────────────────────────────
-const ON_REQUEST_TYPES = new Set(['Florist','Catering','Cake & Desserts']);
+const ON_REQUEST_TYPES = new Set(['Florist','Catering','Cake & Desserts','Furniture Rental','Hair & Makeup']);
 
 const ON_REQUEST_QUESTIONS = {
   'Florist': [
@@ -214,6 +214,26 @@ const ON_REQUEST_QUESTIONS = {
     'How many guests will the cake need to serve?',
     'Do you need a dessert table in addition to the main cake?',
     'Are there any dietary requirements? (e.g. gluten-free, vegan)',
+    'Do you have inspiration images or a colour palette to share?',
+  ],
+  'Furniture Rental': [
+    'How many guests are you expecting?',
+    'What furniture style do you prefer? (e.g. rustic, modern, bohemian, classic)',
+    'Do you need ceremony seating (chairs/benches) or reception seating, or both?',
+    'Are you looking for tables only, or a full furniture package (lounge areas, bar tables, etc.)?',
+    'Do you need a dance floor included in the rental?',
+    'Will you need delivery, setup, and collection included?',
+    'Do you have a venue already — is it indoors, outdoors, or both?',
+    'Do you have any inspiration images or a colour/style palette to share?',
+  ],
+  'Hair & Makeup': [
+    'How many people in your bridal party need hair and/or makeup?',
+    'Do you need both hair and makeup, or just one?',
+    'What is your preferred makeup style? (e.g. natural, glam, editorial)',
+    'What is your preferred hair style? (e.g. updo, loose waves, braided)',
+    'Will a trial session be required before the wedding day?',
+    'What time do you need to be ready by on the wedding day?',
+    'Will the artist need to travel to your venue or accommodation?',
     'Do you have inspiration images or a colour palette to share?',
   ],
 };
@@ -351,7 +371,11 @@ function CustomerAuthModal({onLogin, onClose, redirectVendor=null}) {
   const [loading,setLoading]=useState('');
   const [success,setSuccess]=useState('');
 
-  function handleBackdrop(e){ if(e.target===e.currentTarget) onClose(); }
+  function handleBackdrop(e){
+    if(e.target.closest&&e.target.closest('.pac-container'))return;
+    if(e.target.closest('.pac-container')) return;
+    if(e.target===e.currentTarget) onClose();
+  }
 
   async function handleLogin(e){
     e.preventDefault(); setError(''); setLoading('Logging in…');
@@ -452,7 +476,10 @@ function QuoteModal({vendor,customer,onClose,onSubmitted}) {
   const [fileUrl,setFileUrl]=useState('');
   const [uploading,setUploading]=useState(false);
 
-  function handleBackdrop(e){if(e.target===e.currentTarget)onClose();}
+  function handleBackdrop(e){
+    if(e.target.closest&&e.target.closest('.pac-container'))return;
+    if(e.target===e.currentTarget)onClose();
+  }
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   function setAnswer(i,val){setAnswers(prev=>({...prev,[i]:val}));}
 
@@ -812,8 +839,8 @@ function CustomerDashboard({user,onLogout,onBrowse,initialLead=null}) {
                     <div style={{display:'flex',alignItems:'center',gap:8}}>
                       <div style={{width:34,height:34,borderRadius:7,background:lead.vendor?.images?.[0]?.url?`url(${lead.vendor.images[0].url}) center/cover`:`linear-gradient(135deg,${lead.vendor?.color||'#c8a87a'}cc,${lead.vendor?.color||'#c8a87a'}66)`,flexShrink:0}}/>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:'0.82rem',fontWeight:600,color:'var(--forest)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{lead.title}</div>
-                        <div style={{fontSize:'0.71rem',color:'var(--mid)',marginTop:1}}>{lead.vendor?.name}</div>
+                        <div style={{fontSize:'0.82rem',fontWeight:600,color:'var(--forest)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{lead.vendor?.name}</div>
+                        <div style={{fontSize:'0.71rem',color:'var(--mid)',marginTop:1}}>{lead.title}</div>
                       </div>
                       {hasVendorReply&&!isActive&&<div style={{width:8,height:8,borderRadius:'50%',background:'var(--rose)',flexShrink:0}}/>}
                     </div>
@@ -865,8 +892,8 @@ function CustomerDashboard({user,onLogout,onBrowse,initialLead=null}) {
                         onMouseLeave={e=>{e.currentTarget.style.boxShadow='var(--card-shadow)';e.currentTarget.style.transform='';}}>
                         <div style={{width:48,height:48,borderRadius:10,background:lead.vendor?.images?.[0]?.url?`url(${lead.vendor.images[0].url}) center/cover`:`linear-gradient(135deg,${lead.vendor?.color||'#c8a87a'}dd,${lead.vendor?.color||'#c8a87a'}66)`,flexShrink:0}}/>
                         <div style={{flex:1,minWidth:150}}>
-                          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.05rem',fontWeight:600,color:'var(--forest)',marginBottom:2}}>{lead.title}</div>
-                          <div style={{fontSize:'0.76rem',color:'var(--mid)'}}>{TYPE_EMOJI[lead.vendor?.type]||''} {lead.vendor?.name}</div>
+                          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.05rem',fontWeight:600,color:'var(--forest)',marginBottom:2}}>{lead.vendor?.name}</div>
+                          <div style={{fontSize:'0.76rem',color:'var(--mid)'}}>{TYPE_EMOJI[lead.vendor?.type]||''} {lead.title}</div>
                           {lead.last_message&&<div style={{fontSize:'0.74rem',color:'var(--light)',marginTop:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:300}}>{lead.last_message.sender_role==='vendor'?'Vendor: ':''}{lead.last_message.message_text||'📎 Attachment'}</div>}
                         </div>
                         <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:5}}>
@@ -900,7 +927,9 @@ function LoginModal({onLogin, onClose}) {
   const [loading,setLoading]=useState('');
   const [success,setSuccess]=useState('');
 
-  function handleBackdrop(e){ if(e.target===e.currentTarget) onClose(); }
+  function handleBackdrop(e){
+    if(e.target===e.currentTarget) onClose();
+  }
 
   async function handleLogin(e){
     e.preventDefault(); setError(''); setLoading('Logging in…');
@@ -1803,13 +1832,130 @@ function VendorDashboard({user,onLogout}) {
 }
 
 // ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
+// ── ON-REQUEST PRICING PANEL (admin) ─────────────────────────────────────────
+function OnRequestPricingPanel() {
+  const [averages, setAverages] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  const ON_REQ_LIST = [...ON_REQUEST_TYPES];
+
+  useEffect(()=>{
+    loadAverages();
+  },[]);
+
+  async function loadAverages(){
+    setLoading(true);
+    try{
+      const keys = ON_REQ_LIST.map(t=>`onreq_avg_${t.replace(/[^a-zA-Z0-9]/g,'_')}`);
+      const data = await supaFetch(`app_settings?key=in.(${keys.map(k=>`"${k}"`).join(',')})&select=key,value`);
+      const map = {};
+      (data||[]).forEach(row=>{
+        // reverse-map key back to type
+        const type = ON_REQ_LIST.find(t=>`onreq_avg_${t.replace(/[^a-zA-Z0-9]/g,'_')}`===row.key);
+        if(type) map[type] = row.value;
+      });
+      setAverages(map);
+    }catch(e){
+      setError('Could not load settings. Run the SQL below to create the app_settings table first.');
+    }
+    setLoading(false);
+  }
+
+  async function saveAverages(){
+    setSaving(true); setError(''); setSaved(false);
+    try{
+      for(const type of ON_REQ_LIST){
+        const key = `onreq_avg_${type.replace(/[^a-zA-Z0-9]/g,'_')}`;
+        const value = averages[type]||'0';
+        // Upsert — insert or update
+        await supaFetch('app_settings', {
+          method:'POST',
+          body: JSON.stringify({key, value, updated_at: new Date().toISOString()}),
+          prefer: 'resolution=merge-duplicates,return=minimal',
+          headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+        });
+      }
+      setSaved(true);
+      setTimeout(()=>setSaved(false), 3000);
+    }catch(e){
+      setError('Save failed: '+e.message);
+    }
+    setSaving(false);
+  }
+
+  return(
+    <div style={{padding:'32px',maxWidth:680,margin:'0 auto'}}>
+      <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.8rem',color:'var(--forest)',fontWeight:400,marginBottom:6}}>On Request Average Pricing</h2>
+      <p style={{color:'var(--mid)',fontSize:'0.86rem',marginBottom:24,lineHeight:1.65}}>
+        Set the average market cost for each On Request vendor type. These figures are used in the <strong>Wedding Plan</strong> feature to give customers a recommended spend for categories where pricing is not listed on vendor profiles.
+      </p>
+
+      {/* SQL setup notice */}
+      <div style={{background:'rgba(201,169,110,0.08)',border:'1px solid rgba(201,169,110,0.25)',borderRadius:10,padding:'14px 16px',marginBottom:24,fontSize:'0.8rem',color:'var(--mid)',lineHeight:1.7}}>
+        <strong style={{color:'var(--forest)'}}>⚙️ First-time setup:</strong> Run this SQL in Supabase if you haven't already:
+        <code style={{display:'block',marginTop:8,background:'rgba(58,74,63,0.06)',padding:'10px 12px',borderRadius:6,fontFamily:'monospace',fontSize:'0.75rem',color:'var(--forest)',lineHeight:1.8}}>
+          CREATE TABLE IF NOT EXISTS app_settings (<br/>
+          &nbsp;&nbsp;key TEXT PRIMARY KEY,<br/>
+          &nbsp;&nbsp;value TEXT,<br/>
+          &nbsp;&nbsp;updated_at TIMESTAMPTZ DEFAULT now()<br/>
+          );<br/>
+          ALTER TABLE app_settings DISABLE ROW LEVEL SECURITY;<br/>
+          GRANT ALL ON app_settings TO anon;
+        </code>
+      </div>
+
+      {loading ? (
+        <div style={{textAlign:'center',padding:'40px',color:'var(--light)'}}>Loading…</div>
+      ) : (
+        <div style={{background:'var(--white)',borderRadius:16,boxShadow:'var(--card-shadow)',overflow:'hidden'}}>
+          <div style={{padding:'0'}}>
+            {ON_REQ_LIST.map((type, idx)=>(
+              <div key={type} style={{display:'flex',alignItems:'center',gap:16,padding:'18px 24px',borderBottom:idx<ON_REQ_LIST.length-1?'1px solid var(--parchment)':'none'}}>
+                <div style={{fontSize:'1.4rem',width:32,textAlign:'center'}}>{TYPE_EMOJI[type]}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.05rem',fontWeight:600,color:'var(--forest)',marginBottom:3}}>{type}</div>
+                  <div style={{fontSize:'0.74rem',color:'var(--light)'}}>Average total cost for this vendor category</div>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{fontSize:'0.84rem',color:'var(--mid)',fontWeight:500}}>R</span>
+                  <input
+                    type="number"
+                    value={averages[type]||''}
+                    onChange={e=>setAverages(prev=>({...prev,[type]:e.target.value}))}
+                    placeholder="0"
+                    style={{...inputStyle, width:140, marginBottom:0, textAlign:'right', fontSize:'0.92rem', fontWeight:600, color:'var(--forest)'}}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {error&&<div style={{color:'var(--rose)',fontSize:'0.82rem',marginTop:16,padding:'10px 14px',background:'rgba(196,130,106,0.08)',borderRadius:8}}>{error}</div>}
+
+      <div style={{display:'flex',alignItems:'center',gap:14,marginTop:20}}>
+        <button onClick={saveAverages} disabled={saving||loading} style={{background:'var(--rose)',color:'var(--white)',border:'none',borderRadius:10,padding:'12px 28px',fontFamily:"'DM Sans',sans-serif",fontSize:'0.9rem',fontWeight:500,cursor:(saving||loading)?'wait':'pointer',letterSpacing:'0.04em'}}>
+          {saving?'Saving…':'Save Averages'}
+        </button>
+        {saved&&<span style={{fontSize:'0.84rem',color:'var(--forest)',fontWeight:500}}>✓ Saved successfully!</span>}
+      </div>
+    </div>
+  );
+}
+
+
 function AdminDashboard({onLogout}) {
   const [allVendors,setAllVendors]=useState([]);
   const [loading,setLoading]=useState(true);
   const [editing,setEditing]=useState(null);
   const [editData,setEditData]=useState(null);
-  const [adminTab,setAdminTab]=useState('vendors'); // 'vendors' | 'diagnostics'
+  const [adminTab,setAdminTab]=useState('vendors'); // 'vendors' | 'diagnostics' | 'pricing'
   const [search,setSearch]=useState('');
+  const [viewingVendorDash,setViewingVendorDash]=useState(null); // vendor user object to view full dashboard
 
   useEffect(()=>{loadAll();},[]);
 
@@ -1829,6 +1975,17 @@ function AdminDashboard({onLogout}) {
   function startEdit(v){setEditData({...v,_unavailDates:(v.unavail_dates||[]).map(d=>d.date)});setEditing(v.id);}
 
   const filtered=allVendors.filter(v=>(v.name+v.type+v.location).toLowerCase().includes(search.toLowerCase()));
+
+  // Show full vendor dashboard when admin clicks a vendor
+  if(viewingVendorDash)return(
+    <>
+      <div style={{background:'var(--deep-rose)',padding:'12px 24px',display:'flex',alignItems:'center',gap:12}}>
+        <button onClick={()=>setViewingVendorDash(null)} style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.15)',border:'none',borderRadius:7,padding:'6px 14px',color:'white',cursor:'pointer',fontSize:'0.82rem'}}>‹ Back to Admin</button>
+        <span style={{color:'rgba(255,255,255,0.7)',fontSize:'0.8rem'}}>⚙️ Admin — viewing vendor: <strong style={{color:'white'}}>{viewingVendorDash.email}</strong></span>
+      </div>
+      <VendorDashboard user={viewingVendorDash} onLogout={()=>setViewingVendorDash(null)}/>
+    </>
+  );
 
   if(editing==='new')return(
     <div style={{padding:'40px 28px',maxWidth:800,margin:'0 auto'}}>
@@ -1856,14 +2013,14 @@ function AdminDashboard({onLogout}) {
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           <div style={{display:'flex',gap:4,background:'rgba(0,0,0,0.2)',borderRadius:8,padding:4}}>
-            {['vendors','diagnostics'].map(t=><button key={t} onClick={()=>setAdminTab(t)} style={{background:adminTab===t?'rgba(255,255,255,0.15)':'none',border:'none',color:'rgba(255,255,255,0.9)',padding:'6px 14px',borderRadius:6,cursor:'pointer',fontSize:'0.78rem',fontWeight:500,textTransform:'capitalize'}}>{t==='diagnostics'?'🔧 Diagnostics':'📋 Vendors'}</button>)}
+            {[['vendors','📋 Vendors'],['pricing','💰 Pricing'],['diagnostics','🔧 Diagnostics']].map(([t,label])=><button key={t} onClick={()=>setAdminTab(t)} style={{background:adminTab===t?'rgba(255,255,255,0.15)':'none',border:'none',color:'rgba(255,255,255,0.9)',padding:'6px 14px',borderRadius:6,cursor:'pointer',fontSize:'0.78rem',fontWeight:500}}>{label}</button>)}
           </div>
           <button onClick={()=>setEditing('new')} style={{background:'var(--gold)',color:'var(--forest)',border:'none',borderRadius:8,padding:'8px 16px',fontFamily:"'DM Sans',sans-serif",fontSize:'0.82rem',fontWeight:600,cursor:'pointer'}}>+ Add Vendor</button>
           <button onClick={onLogout} style={{background:'rgba(255,255,255,0.15)',color:'white',border:'none',borderRadius:8,padding:'8px 14px',fontFamily:"'DM Sans',sans-serif",fontSize:'0.82rem',cursor:'pointer'}}>Logout</button>
         </div>
       </div>
 
-      {adminTab==='diagnostics'?<DiagnosticPanel/>:(
+      {adminTab==='diagnostics'?<DiagnosticPanel/>:adminTab==='pricing'?<OnRequestPricingPanel/>:(
         <div style={{padding:'32px'}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20,flexWrap:'wrap',gap:12}}>
             <div>
@@ -1877,7 +2034,7 @@ function AdminDashboard({onLogout}) {
               {filtered.length===0?<div style={{textAlign:'center',padding:'40px',color:'var(--light)'}}>No vendors found.</div>:
                 filtered.map(v=>(
                   <div key={v.id}
-                    onClick={()=>startEdit(v)}
+                    onClick={()=>setViewingVendorDash({role:'vendor',email:v.user_id?v.user_id+'@admin':'vendor@admin',userId:v.user_id||v.id,vendorId:v.id})}
                     style={{background:'var(--white)',borderRadius:12,padding:'16px 20px',boxShadow:'var(--card-shadow)',display:'flex',alignItems:'center',gap:16,flexWrap:'wrap',cursor:'pointer',transition:'box-shadow 0.15s,transform 0.15s'}}
                     onMouseEnter={e=>{e.currentTarget.style.boxShadow='var(--card-shadow-hover)';e.currentTarget.style.transform='translateY(-2px)';}}
                     onMouseLeave={e=>{e.currentTarget.style.boxShadow='var(--card-shadow)';e.currentTarget.style.transform='';}}>
@@ -2020,6 +2177,294 @@ function FavouritesView({customerId,onOpenDetail,onRequestQuote,dateFrom,dateTo}
     </div>
   );
 }
+
+// ── WEDDING PLAN ──────────────────────────────────────────────────────────────
+const BOOKING_ORDER = [
+  {step:1, type:'Venue',         emoji:'🏛',  note:'Your venue sets the date, style and guest count — everything else flows from this choice.',          why:'Venues book up to 18 months in advance. Locking this in first lets every other vendor know the date.'},
+  {step:2, type:'Photography',   emoji:'📷',  note:'Your photographer captures memories that last a lifetime. The best ones book out fast.',              why:'Top photographers are often booked 12+ months ahead. Secure yours early while you have full choice.'},
+  {step:3, type:'Catering',      emoji:'🍽',  note:'Food is often the most talked-about part of a wedding. Great catering makes a great party.',          why:'Caterers need lead time to plan menus, source ingredients, and staff appropriately for your guest count.'},
+  {step:4, type:'Florist',       emoji:'💐',  note:'Flowers set the mood — from the ceremony arch to table centrepieces and bridal bouquets.',             why:'Florals require detailed planning and sourcing. Book early to ensure your preferred style and blooms.'},
+  {step:5, type:'Videography',   emoji:'🎬',  note:'A wedding film lets you relive every moment for years to come — sound, movement, and emotion.',        why:'Videographers are often booked alongside photographers. The best ones fill their calendars quickly.'},
+  {step:6, type:'DJ',            emoji:'🎧',  note:'Your DJ keeps the energy alive from first dance to last song. The right DJ reads the crowd.',           why:'Great DJs fill up their weekends fast, especially for peak season. Book to secure your date.'},
+  {step:7, type:'Entertainment', emoji:'🎶',  note:'Pre-drinks entertainment keeps guests engaged while you finish photos — bands, soloists, or acts.',     why:'Live entertainers book up quickly for peak wedding season. Unique acts are limited.'},
+  {step:8, type:'Cake & Desserts',emoji:'🎂', note:'Your cake is a centrepiece and a treat. Custom designs take time and careful planning.',               why:'Custom wedding cakes require weeks of design, tasting sessions, and preparation.'},
+  {step:9, type:'Furniture Rental',emoji:'🛋',note:'Tables, chairs, lounge sets, and dance floors transform a space into your dream setting.',             why:'Popular furniture sets and styles get reserved early — especially for large guest counts.'},
+  {step:10,type:'Hair & Makeup', emoji:'💄',  note:'Looking and feeling your best on your wedding day gives you the confidence to enjoy every moment.',    why:'Sought-after artists book out for wedding season. A trial session is also recommended.'},
+];
+
+// Typical spend ratios (approximate % of total vendor budget)
+const BUDGET_RATIOS = {
+  'Photography':   0.18,
+  'Catering':      0.30,
+  'Florist':       0.08,
+  'DJ':            0.07,
+  'Entertainment': 0.05,
+  'Videography':   0.12,
+  'Cake & Desserts':0.04,
+  'Barista':       0.04,
+  'Furniture Rental':0.07,
+  'Hair & Makeup': 0.05,
+};
+
+function WeddingPlan({onClose, vendors}) {
+  const [planStep, setPlanStep] = useState('intro');
+  const [weddingVenue, setWeddingVenue] = useState('');
+  const [totalBudget, setTotalBudget] = useState('');
+  const [onReqAverages, setOnReqAverages] = useState({});
+
+  // Fetch admin-set on-request averages from app_settings
+  useEffect(()=>{
+    const keys = [...ON_REQUEST_TYPES].map(t=>`onreq_avg_${t.replace(/[^a-zA-Z0-9]/g,'_')}`);
+    supaFetch(`app_settings?key=in.(${keys.map(k=>'"'+k+'"').join(',')})&select=key,value`)
+      .then(data=>{
+        const map = {};
+        (data||[]).forEach(row=>{
+          const type = [...ON_REQUEST_TYPES].find(t=>`onreq_avg_${t.replace(/[^a-zA-Z0-9]/g,'_')}`===row.key);
+          if(type && row.value) map[type] = parseInt(row.value)||0;
+        });
+        setOnReqAverages(map);
+      }).catch(()=>{});
+  },[]);
+
+  // Calculate average costs from real vendor data + admin on-request averages
+  const avgCosts = useMemo(() => {
+    const result = {};
+    ALL_TYPES.forEach(type => {
+      if(ON_REQUEST_TYPES.has(type)){
+        // Use admin-set average if available
+        result[type] = onReqAverages[type] || null;
+      } else {
+        const typed = vendors.filter(v => v.type === type);
+        if (typed.length > 0) {
+          const tots = typed.map(v => v.fixed_rate || 0).filter(n => n > 0);
+          result[type] = tots.length > 0 ? Math.round(tots.reduce((a,b)=>a+b,0)/tots.length) : null;
+        }
+      }
+    });
+    return result;
+  }, [vendors, onReqAverages]);
+
+  // Recommended spend per category based on budget
+  const budget = parseFloat(totalBudget) || 0;
+  const recommendedSpend = useMemo(() => {
+    if (!budget) return {};
+    const result = {};
+    ALL_TYPES.forEach(type => {
+      result[type] = Math.round(budget * (BUDGET_RATIOS[type] || 0.05));
+    });
+    return result;
+  }, [budget]);
+
+  const s = { // shared styles
+    section: {background:'var(--white)',borderRadius:16,boxShadow:'var(--card-shadow)',marginBottom:20,overflow:'hidden'},
+    stepNum: {width:32,height:32,borderRadius:'50%',background:'var(--forest)',color:'var(--gold-light)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:'0.88rem',flexShrink:0},
+    onReqBadge: {fontSize:'0.68rem',background:'rgba(196,130,106,0.12)',color:'var(--rose)',border:'1px solid rgba(196,130,106,0.25)',borderRadius:999,padding:'2px 8px',fontStyle:'italic'},
+  };
+
+  if (planStep === 'intro') return (
+    <div style={{minHeight:'100vh',background:'var(--cream)'}}>
+      <div style={{background:'var(--white)',borderBottom:'1px solid var(--parchment)',padding:'14px 24px',display:'flex',alignItems:'center',gap:12,position:'sticky',top:0,zIndex:10}}>
+        <button onClick={onClose} style={{background:'var(--parchment)',border:'none',borderRadius:7,padding:'6px 12px',cursor:'pointer',fontSize:'0.8rem',color:'var(--mid)'}}>‹ Back</button>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.3rem',color:'var(--forest)',fontWeight:600}}>💍 Wedding Plan</div>
+      </div>
+      <div style={{maxWidth:800,margin:'0 auto',padding:'32px 24px 60px'}}>
+        <div style={{textAlign:'center',marginBottom:36}}>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'2.2rem',color:'var(--forest)',fontWeight:300,marginBottom:8}}>Plan Your Perfect Wedding</div>
+          <p style={{color:'var(--mid)',fontSize:'0.92rem',maxWidth:520,margin:'0 auto',lineHeight:1.7}}>Follow the recommended booking order to secure the best vendors at the best prices — before they're taken.</p>
+        </div>
+
+        {/* Booking order diagram */}
+        <div style={{background:'var(--white)',borderRadius:16,boxShadow:'var(--card-shadow)',padding:'24px',marginBottom:32}}>
+          <div style={{fontSize:'0.72rem',letterSpacing:'0.15em',textTransform:'uppercase',color:'var(--mid)',marginBottom:18,fontWeight:500}}>Recommended Booking Order</div>
+          <div style={{display:'flex',flexDirection:'column',gap:0}}>
+            {BOOKING_ORDER.map((item,idx)=>(
+              <div key={item.step} style={{display:'flex',alignItems:'center',gap:12,padding:'8px 0',borderBottom:idx<BOOKING_ORDER.length-1?'1px solid var(--parchment)':'none'}}>
+                <div style={{...s.stepNum,background:ON_REQUEST_TYPES.has(item.type)?'var(--blush)':idx<3?'var(--forest)':'var(--mid)'}}>{item.step}</div>
+                <div style={{fontSize:'1.1rem',width:24,textAlign:'center'}}>{item.emoji}</div>
+                <div style={{flex:1}}>
+                  <span style={{fontSize:'0.92rem',fontWeight:600,color:'var(--forest)'}}>{item.type}</span>
+                  {ON_REQUEST_TYPES.has(item.type)&&<span style={{...s.onReqBadge,marginLeft:8}}>On Request</span>}
+                </div>
+                <div style={{fontSize:'0.72rem',color:'var(--light)',maxWidth:220,textAlign:'right',lineHeight:1.4,display:'flex',alignItems:'center',gap:6}}>
+                  {idx<3&&<span style={{color:'var(--rose)',fontWeight:600,fontSize:'0.68rem'}}>Book first</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <button onClick={()=>setPlanStep('setup')} style={{width:'100%',background:'var(--rose)',color:'var(--white)',border:'none',borderRadius:12,padding:'16px',fontFamily:"'DM Sans',sans-serif",fontSize:'1rem',fontWeight:600,cursor:'pointer',letterSpacing:'0.05em'}}>
+          Get Started →
+        </button>
+      </div>
+    </div>
+  );
+
+  if (planStep === 'setup') return (
+    <div style={{minHeight:'100vh',background:'var(--cream)'}}>
+      <div style={{background:'var(--white)',borderBottom:'1px solid var(--parchment)',padding:'14px 24px',display:'flex',alignItems:'center',gap:12,position:'sticky',top:0,zIndex:10}}>
+        <button onClick={()=>setPlanStep('intro')} style={{background:'var(--parchment)',border:'none',borderRadius:7,padding:'6px 12px',cursor:'pointer',fontSize:'0.8rem',color:'var(--mid)'}}>‹ Back</button>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.3rem',color:'var(--forest)',fontWeight:600}}>💍 Your Wedding Details</div>
+      </div>
+      <div style={{maxWidth:600,margin:'0 auto',padding:'40px 24px 60px'}}>
+        <p style={{color:'var(--mid)',fontSize:'0.9rem',marginBottom:32,lineHeight:1.7}}>Enter your wedding venue and total vendor budget. We'll break it down into recommended spend per category based on industry averages.</p>
+        <div style={{background:'var(--white)',borderRadius:16,boxShadow:'var(--card-shadow)',padding:'28px'}}>
+          <div style={{marginBottom:20}}>
+            <label style={labelStyle}>Wedding Venue / Location</label>
+            <input style={inputStyle} value={weddingVenue} onChange={e=>setWeddingVenue(e.target.value)} placeholder="e.g. Babylonstoren, Franschhoek"/>
+          </div>
+          <div style={{marginBottom:24}}>
+            <label style={labelStyle}>Total Vendor Budget (R)</label>
+            <input style={inputStyle} type="number" value={totalBudget} onChange={e=>setTotalBudget(e.target.value)} placeholder="e.g. 150000"/>
+            <div style={{fontSize:'0.74rem',color:'var(--light)',marginTop:6}}>This is your total spend across all wedding vendors (excluding venue rental cost).</div>
+          </div>
+          {totalBudget&&parseInt(totalBudget)>0&&(
+            <div style={{background:'rgba(58,74,63,0.06)',borderRadius:10,padding:'14px 16px',marginBottom:20,border:'1px solid rgba(58,74,63,0.1)'}}>
+              <div style={{fontSize:'0.78rem',fontWeight:600,color:'var(--forest)',marginBottom:8}}>Budget preview</div>
+              {ALL_TYPES.map(type=>{
+                const isOR=ON_REQUEST_TYPES.has(type);
+                return(
+                  <div key={type} style={{display:'flex',justifyContent:'space-between',fontSize:'0.8rem',padding:'4px 0',borderBottom:'1px solid rgba(58,74,63,0.07)',alignItems:'center'}}>
+                    <span style={{color:'var(--mid)'}}>{TYPE_EMOJI[type]} {type}{isOR&&<span style={{fontSize:'0.66rem',color:'var(--rose)',marginLeft:4,fontStyle:'italic'}}> on request</span>}</span>
+                    <span style={{fontWeight:600,color:isOR?'var(--rose)':'var(--forest)'}}>{fmt(Math.round(parseInt(totalBudget)*(BUDGET_RATIOS[type]||0.05)))}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <button
+            onClick={()=>{if(!totalBudget||parseInt(totalBudget)<=0){alert('Please enter a budget to continue.');return;}setPlanStep('plan');}}
+            style={{width:'100%',background:'var(--forest)',color:'var(--gold-light)',border:'none',borderRadius:10,padding:'13px',fontFamily:"'DM Sans',sans-serif",fontSize:'0.92rem',fontWeight:500,cursor:'pointer',letterSpacing:'0.04em'}}>
+            Build My Wedding Plan →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── FULL PLAN VIEW ────────────────────────────────────────────────────────
+  return (
+    <div style={{minHeight:'100vh',background:'var(--cream)'}}>
+      <div style={{background:'var(--white)',borderBottom:'1px solid var(--parchment)',padding:'14px 24px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:10}}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <button onClick={()=>setPlanStep('setup')} style={{background:'var(--parchment)',border:'none',borderRadius:7,padding:'6px 12px',cursor:'pointer',fontSize:'0.8rem',color:'var(--mid)'}}>‹ Edit</button>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.3rem',color:'var(--forest)',fontWeight:600}}>💍 Wedding Plan</div>
+        </div>
+        <div style={{textAlign:'right'}}>
+          {weddingVenue&&<div style={{fontSize:'0.76rem',color:'var(--mid)'}}>📍 {weddingVenue}</div>}
+          <div style={{fontSize:'0.82rem',fontWeight:600,color:'var(--rose)'}}>Budget: {fmt(parseInt(totalBudget))}</div>
+        </div>
+      </div>
+
+      <div style={{maxWidth:860,margin:'0 auto',padding:'28px 24px 60px'}}>
+        {/* Mini booking order strip */}
+        <div style={{display:'flex',gap:4,overflowX:'auto',paddingBottom:8,marginBottom:28}}>
+          {BOOKING_ORDER.map(item=>(
+            <div key={item.step} style={{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',gap:3,width:64}}>
+              <div style={{width:36,height:36,borderRadius:'50%',background:ON_REQUEST_TYPES.has(item.type)?'var(--blush)':'var(--forest)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.92rem'}}>{item.emoji}</div>
+              <div style={{fontSize:'0.58rem',color:'var(--mid)',textAlign:'center',lineHeight:1.3,fontWeight:500}}>{item.type}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* One section per booking step */}
+        {BOOKING_ORDER.map((item, idx) => {
+          const isOnReq = ON_REQUEST_TYPES.has(item.type);
+          const catVendors = vendors.filter(v => v.type === item.type);
+          const prices = catVendors.filter(v=>!isOnReq).map(v=>v.fixed_rate||0).filter(n=>n>0);
+          const catAvg = prices.length>0 ? Math.round(prices.reduce((a,b)=>a+b,0)/prices.length) : null;
+          const catMin = prices.length>0 ? Math.min(...prices) : null;
+          const catMax = prices.length>0 ? Math.max(...prices) : null;
+          const recSpend = recommendedSpend[item.type] || 0;
+          return (
+            <div key={item.step} style={{...s.section}}>
+              {/* Section header */}
+              <div style={{background:'var(--forest)',padding:'14px 20px',display:'flex',alignItems:'center',gap:12}}>
+                <div style={{...s.stepNum,background:'rgba(255,255,255,0.15)',color:'var(--gold-light)'}}>{item.step}</div>
+                <div style={{fontSize:'1.4rem'}}>{item.emoji}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.2rem',color:'var(--gold-light)',fontWeight:600}}>{item.type}</div>
+                  {isOnReq&&<span style={{fontSize:'0.68rem',background:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.8)',borderRadius:999,padding:'1px 8px'}}>On Request</span>}
+                </div>
+              </div>
+
+              <div style={{padding:'18px 20px'}}>
+                {/* Why section */}
+                <div style={{marginBottom:14}}>
+                  <div style={{fontSize:'0.88rem',color:'var(--charcoal)',lineHeight:1.65,marginBottom:6}}>{item.note}</div>
+                  <div style={{fontSize:'0.8rem',color:'var(--mid)',background:'var(--parchment)',borderRadius:8,padding:'8px 12px',lineHeight:1.55}}>
+                    <strong style={{color:'var(--forest)'}}>Why book now:</strong> {item.why}
+                  </div>
+                </div>
+
+                {isOnReq ? (
+                  <div>
+                    {(avgCosts[item.type]>0||recommendedSpend[item.type]>0) ? (
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+                        <div style={{background:'var(--parchment)',borderRadius:10,padding:'14px 16px'}}>
+                          <div style={{fontSize:'0.68rem',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--mid)',marginBottom:8}}>Avg. market cost</div>
+                          {avgCosts[item.type] ? (
+                            <>
+                              <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.6rem',fontWeight:600,color:'var(--forest)',marginBottom:4}}>{fmt(avgCosts[item.type])}</div>
+                              <div style={{fontSize:'0.71rem',color:'var(--light)'}}>Set by admin · varies by requirements</div>
+                            </>
+                          ) : (
+                            <div style={{fontSize:'0.8rem',color:'var(--light)',fontStyle:'italic'}}>Not set yet</div>
+                          )}
+                        </div>
+                        <div style={{background:'rgba(58,74,63,0.06)',borderRadius:10,padding:'14px 16px',border:'1px solid rgba(58,74,63,0.1)'}}>
+                          <div style={{fontSize:'0.68rem',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--mid)',marginBottom:8}}>Your recommended spend</div>
+                          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.6rem',fontWeight:600,color:'var(--rose)',marginBottom:4}}>{fmt(recommendedSpend[item.type]||0)}</div>
+                          <div style={{fontSize:'0.72rem',color:'var(--light)'}}>{Math.round((BUDGET_RATIOS[item.type]||0.05)*100)}% of your total budget</div>
+                          {avgCosts[item.type]&&recommendedSpend[item.type]>0&&(
+                            <div style={{fontSize:'0.71rem',marginTop:6,color:recommendedSpend[item.type]>=avgCosts[item.type]?'var(--forest)':'var(--rose)',fontWeight:500}}>
+                              {recommendedSpend[item.type]>=avgCosts[item.type]?'✓ Within range':'⚠ Below average'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ):null}
+                    <div style={{background:'rgba(196,130,106,0.06)',borderRadius:10,padding:'12px 16px',border:'1px solid rgba(196,130,106,0.18)',fontSize:'0.82rem',color:'var(--mid)',lineHeight:1.6}}>
+                      💌 <strong>Final pricing is on request</strong> — the figures above are market averages for budgeting purposes. Use the <em>Request a Quote</em> feature on any {item.type} vendor page to get your personalised quote.
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:8}}>
+                    {/* Average cost card */}
+                    <div style={{background:'var(--parchment)',borderRadius:10,padding:'14px 16px'}}>
+                      <div style={{fontSize:'0.68rem',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--mid)',marginBottom:8}}>Market average</div>
+                      {catAvg ? (
+                        <>
+                          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.6rem',fontWeight:600,color:'var(--forest)',marginBottom:4}}>{fmt(catAvg)}</div>
+                          <div style={{fontSize:'0.72rem',color:'var(--light)'}}>Range: {catMin?fmt(catMin):'–'} – {catMax?fmt(catMax):'–'}</div>
+                          <div style={{fontSize:'0.71rem',color:'var(--light)',marginTop:2}}>Based on {prices.length} vendor{prices.length!==1?'s':''} on VowFinds</div>
+                        </>
+                      ) : (
+                        <div style={{fontSize:'0.82rem',color:'var(--light)',fontStyle:'italic'}}>No vendors listed yet</div>
+                      )}
+                    </div>
+                    {/* Recommended spend card */}
+                    <div style={{background:'rgba(58,74,63,0.06)',borderRadius:10,padding:'14px 16px',border:'1px solid rgba(58,74,63,0.1)'}}>
+                      <div style={{fontSize:'0.68rem',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--mid)',marginBottom:8}}>Your recommended spend</div>
+                      <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.6rem',fontWeight:600,color:'var(--rose)',marginBottom:4}}>{fmt(recSpend)}</div>
+                      <div style={{fontSize:'0.72rem',color:'var(--light)'}}>{Math.round((BUDGET_RATIOS[item.type]||0.05)*100)}% of your total budget</div>
+                      {catAvg&&recSpend>0&&(
+                        <div style={{fontSize:'0.71rem',marginTop:6,color:recSpend>=catAvg?'var(--forest)':'var(--rose)',fontWeight:500}}>
+                          {recSpend>=catAvg?'✓ Comfortably within range':'⚠ Below market average'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 
 // ── SCENARIO BUILDER ──────────────────────────────────────────────────────────
 // Completely uncontrolled venue input — Google Autocomplete owns the DOM value.
@@ -2539,10 +2984,11 @@ export default function VowFinds() {
   const [showCustomerAuth,setShowCustomerAuth]=useState(false);
   const [quoteVendor,setQuoteVendor]=useState(null);
   const [pendingQuoteVendor,setPendingQuoteVendor]=useState(null);
-  const [customerView,setCustomerView]=useState('browse'); // 'browse' | 'dashboard' | 'favourites' | 'scenario'
+  const [customerView,setCustomerView]=useState('browse'); // 'browse' | 'dashboard' | 'favourites' | 'scenario' | 'weddingplan'
   const [newLeadAfterQuote,setNewLeadAfterQuote]=useState(null);
   const [menuOpen,setMenuOpen]=useState(false);
   const [showScenario,setShowScenario]=useState(false);
+  const [showWeddingPlan,setShowWeddingPlan]=useState(false);
 
   function handleLogin(u){
     setUser(u);
@@ -2622,6 +3068,7 @@ export default function VowFinds() {
             <div onClick={()=>setMenuOpen(false)} style={{position:'fixed',inset:0,zIndex:198}}/>
             <div style={{position:'fixed',top:56,left:0,width:220,background:'var(--white)',boxShadow:'4px 0 20px rgba(0,0,0,0.12)',zIndex:199,borderRight:'1px solid var(--parchment)',padding:'8px 0'}}>
               {[
+                {label:'💍 Wedding Plan',action:()=>{setCustomerView('weddingplan');setMenuOpen(false);}},
                 {label:'🔍 Browse Vendors',action:()=>{setCustomerView('browse');setMenuOpen(false);}},
                 {label:'⭐ My Favourites',action:()=>{setCustomerView('favourites');setMenuOpen(false);}},
                 {label:'🗂 Scenario Builder',action:()=>{setCustomerView('scenario');setMenuOpen(false);}},
@@ -2642,6 +3089,8 @@ export default function VowFinds() {
           <CustomerDashboard user={user} onLogout={handleLogout} onBrowse={()=>setCustomerView('browse')} initialLead={newLeadAfterQuote}/>
         ):customerView==='favourites'?(
           <FavouritesView customerId={user?.customerId} onOpenDetail={(v)=>{setActiveVendor(v);setView('detail');setCustomerView('browse');}} onRequestQuote={requestQuote} dateFrom={dateFrom} dateTo={dateTo}/>
+        ):customerView==='weddingplan'?(
+          <WeddingPlan vendors={vendors} onClose={()=>setCustomerView('browse')}/>
         ):customerView==='scenario'?(
           <ScenarioBuilder user={user} vendors={vendors} onClose={()=>setCustomerView('browse')}/>
         ):(
@@ -2713,6 +3162,7 @@ export default function VowFinds() {
     <>
       <GlobalStyles/>
       {showScenario&&<div style={{position:'fixed',inset:0,zIndex:500,background:'var(--cream)',overflowY:'auto'}}><ScenarioBuilder user={null} vendors={vendors} onClose={()=>setShowScenario(false)}/></div>}
+      {showWeddingPlan&&<div style={{position:'fixed',inset:0,zIndex:500,background:'var(--cream)',overflowY:'auto'}}><WeddingPlan vendors={vendors} onClose={()=>setShowWeddingPlan(false)}/></div>}
       {showLoginModal && <LoginModal onLogin={handleLogin} onClose={()=>setShowLoginModal(false)}/>}
       {showCustomerAuth && <CustomerAuthModal onLogin={handleLogin} onClose={()=>{setShowCustomerAuth(false);setPendingQuoteVendor(null);}} redirectVendor={pendingQuoteVendor}/>}
       {quoteVendor && user?.role==='customer' && <QuoteModal vendor={quoteVendor} customer={user} onClose={()=>setQuoteVendor(null)} onSubmitted={()=>setQuoteVendor(null)}/>}
@@ -2737,6 +3187,7 @@ export default function VowFinds() {
           <div onClick={()=>setMenuOpen(false)} style={{position:'fixed',inset:0,zIndex:198}}/>
           <div style={{position:'fixed',top:56,left:0,width:220,background:'var(--white)',boxShadow:'4px 0 20px rgba(0,0,0,0.12)',zIndex:199,borderRight:'1px solid var(--parchment)',padding:'8px 0'}}>
             {[
+              {label:'💍 Wedding Plan',action:()=>{setShowWeddingPlan(true);setMenuOpen(false);}},
               {label:'🔍 Browse Vendors',action:()=>{setView('customer');setMenuOpen(false);}},
               {label:'🗂 Scenario Builder',action:()=>{setShowScenario(true);setMenuOpen(false);}},
               {label:'👤 Customer Login',action:()=>{setShowCustomerAuth(true);setMenuOpen(false);}},

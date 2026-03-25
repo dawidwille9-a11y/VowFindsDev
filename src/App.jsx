@@ -1345,32 +1345,43 @@ function VendorDetail({vendor,dateFrom,dateTo,venueLabel,venueLatLng,onBack,onRe
 
 // ── VENDOR LANE ───────────────────────────────────────────────────────────────
 function VendorLane({type,vendors,dateFrom,dateTo,onOpenDetail,isLast,onRequestQuote,customerId=null}) {
-  const totals=vendors.map(v=>calcTotal(v)),maxT=Math.max(...totals,1000),minT=Math.min(...totals,0),avgT=avg(totals),sliderMax=Math.ceil(maxT*1.15/1000)*1000;
+  // On-request categories have no fixed pricing — skip the price slider entirely
+  const allOnRequest = ON_REQUEST_TYPES.has(type);
+  const totals=vendors.map(v=>calcTotal(v));
+  const maxT=Math.max(...totals,1000),minT=Math.min(...totals,0),avgT=avg(totals),sliderMax=Math.ceil(maxT*1.15/1000)*1000;
   const [maxPrice,setMaxPrice]=useState(sliderMax);
-  const pct=Math.round(((maxPrice-minT)/(sliderMax-minT))*100),avgPct=Math.round(((avgT-minT)/(sliderMax-minT))*100);
-  const visible=vendors.filter(v=>calcTotal(v)<=maxPrice);
+  const pct=Math.round(((maxPrice-minT)/(sliderMax-minT))*100),avgPct=avgT>0?Math.round(((avgT-minT)/(sliderMax-minT))*100):0;
+  const visible=allOnRequest?vendors:vendors.filter(v=>calcTotal(v)<=maxPrice);
   return (
-    <div style={{marginBottom:12}}>
+    <div className="vf-lane-wrapper" style={{marginBottom:12}}>
       <div className="vf-lane-header" style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 32px',marginBottom:16,flexWrap:'wrap',gap:12}}>
         <div style={{display:'flex',alignItems:'center',gap:14}}>
           <span style={{fontSize:'1.3rem'}}>{TYPE_EMOJI[type]}</span>
           <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.5rem',fontWeight:600,color:'var(--forest)'}}>{type}</span>
           <span style={{fontSize:'0.75rem',color:'var(--light)',background:'var(--parchment)',padding:'3px 10px',borderRadius:999}}>{visible.length} of {vendors.length} vendor{vendors.length!==1?'s':''}</span>
+          {allOnRequest&&<span style={{fontSize:'0.72rem',color:'var(--rose)',fontStyle:'italic',fontWeight:500}}>On Request</span>}
         </div>
-        <div className="vf-lane-slider" style={{background:'var(--white)',borderRadius:10,padding:'10px 18px',boxShadow:'var(--card-shadow)',display:'flex',flexDirection:'column',gap:6,minWidth:260}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}><span style={{fontSize:'0.7rem',letterSpacing:'0.09em',textTransform:'uppercase',color:'var(--mid)'}}>Max price</span><span style={{fontSize:'0.82rem',fontWeight:600,color:'var(--rose)'}}>{fmt(maxPrice)}</span></div>
-          <div style={{position:'relative'}}>
-            <input type="range" min={minT} max={sliderMax} step={500} value={maxPrice} onChange={e=>setMaxPrice(parseInt(e.target.value))} style={{width:'100%',WebkitAppearance:'none',appearance:'none',height:4,borderRadius:2,outline:'none',cursor:'pointer',background:`linear-gradient(to right,var(--rose) 0%,var(--rose) ${pct}%,var(--parchment) ${pct}%,var(--parchment) 100%)`}}/>
-            <div style={{position:'absolute',top:-3,left:`${avgPct}%`,transform:'translateX(-50%)',width:2,height:10,background:'var(--gold)',borderRadius:1,pointerEvents:'none'}}/>
+        {!allOnRequest&&(
+          <div style={{background:'var(--white)',borderRadius:10,padding:'10px 18px',boxShadow:'var(--card-shadow)',display:'flex',flexDirection:'column',gap:6,minWidth:260}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}><span style={{fontSize:'0.7rem',letterSpacing:'0.09em',textTransform:'uppercase',color:'var(--mid)'}}>Max price</span><span style={{fontSize:'0.82rem',fontWeight:600,color:'var(--rose)'}}>{fmt(maxPrice)}</span></div>
+            <div style={{position:'relative'}}>
+              <input type="range" min={minT} max={sliderMax} step={500} value={maxPrice} onChange={e=>setMaxPrice(parseInt(e.target.value))} style={{width:'100%',WebkitAppearance:'none',appearance:'none',height:4,borderRadius:2,outline:'none',cursor:'pointer',background:`linear-gradient(to right,var(--rose) 0%,var(--rose) ${pct}%,var(--parchment) ${pct}%,var(--parchment) 100%)`}}/>
+              <div style={{position:'absolute',top:-3,left:`${avgPct}%`,transform:'translateX(-50%)',width:2,height:10,background:'var(--gold)',borderRadius:1,pointerEvents:'none'}}/>
+            </div>
+            <div style={{fontSize:'0.72rem',color:'var(--light)',display:'flex',alignItems:'center',gap:4}}><span>Avg. for this category:</span><span style={{color:'var(--gold)',fontWeight:500}}>{fmt(avgT)}</span></div>
           </div>
-          <div style={{fontSize:'0.72rem',color:'var(--light)',display:'flex',alignItems:'center',gap:4}}><span>Avg. for this category:</span><span style={{color:'var(--gold)',fontWeight:500}}>{fmt(avgT)}</span></div>
-        </div>
+        )}
       </div>
       <div style={{position:'relative'}}>
-        <div className="vf-lane-fade-left" style={{position:'absolute',top:0,bottom:20,left:0,width:40,background:'linear-gradient(to right,var(--cream),transparent)',zIndex:10,pointerEvents:'none'}}/>
-        <div className="vf-lane-fade-right" style={{position:'absolute',top:0,bottom:20,right:0,width:40,background:'linear-gradient(to left,var(--cream),transparent)',zIndex:10,pointerEvents:'none'}}/>
+        <div className="vf-lane-fade-left" style={{position:'absolute',top:0,bottom:20,left:0,width:40,background:'linear-gradient(to right,#fdfaf7,transparent)',zIndex:10,pointerEvents:'none'}}/>
+        <div className="vf-lane-fade-right" style={{position:'absolute',top:0,bottom:20,right:0,width:40,background:'linear-gradient(to left,#fdfaf7,transparent)',zIndex:10,pointerEvents:'none'}}/>
         <div style={{display:'flex',gap:20,overflowX:'auto',padding:'4px 32px 20px',scrollbarWidth:'none'}}>
-          {vendors.map(v=>{const ok=calcTotal(v)<=maxPrice;const unavail=dateFrom&&(v.unavail_dates||[]).some(d=>{const dd=d.date;return dd>=dateFrom&&(!dateTo||dd<=dateTo);});if(!ok)return null;return<VendorCard key={v.id} vendor={v} unavail={unavail} dateFrom={dateFrom} dateTo={dateTo} onClick={()=>onOpenDetail(v)} onRequestQuote={()=>onRequestQuote&&onRequestQuote(v)} customerId={customerId} onFav={!!customerId}/>;  })}
+          {vendors.map(v=>{
+            const ok=allOnRequest||calcTotal(v)<=maxPrice;
+            const unavail=dateFrom&&(v.unavail_dates||[]).some(d=>{const dd=d.date;return dd>=dateFrom&&(!dateTo||dd<=dateTo);});
+            if(!ok)return null;
+            return<VendorCard key={v.id} vendor={v} unavail={unavail} dateFrom={dateFrom} dateTo={dateTo} onClick={()=>onOpenDetail(v)} onRequestQuote={()=>onRequestQuote&&onRequestQuote(v)} customerId={customerId} onFav={!!customerId}/>;
+          })}
           {visible.length===0&&<div style={{padding:'24px 0',fontSize:'0.85rem',color:'var(--light)',fontStyle:'italic'}}>No vendors match this price filter.</div>}
         </div>
       </div>
@@ -2953,25 +2964,15 @@ function GlobalStyles(){return(
       }
       .vf-vendor-card .vf-card-ig{width:24px!important;height:24px!important;}
 
-      /* Results section — light cream palette throughout */
-      .vf-results-section{background:#fdfaf7!important;}
-      .vf-lane-wrapper{background:#fdfaf7!important;}
-      .vf-lane-fade-left{background:linear-gradient(to right,#fdfaf7,transparent)!important;}
-      .vf-lane-fade-right{background:linear-gradient(to left,#fdfaf7,transparent)!important;}
-      .vf-lane-divider{border-top-color:#e8e0d6!important;margin:4px 16px 28px!important;}
+      /* Results section — white backdrop on mobile */
+      body{background:#ffffff!important;}
+      .vf-results-section{background:#ffffff!important;}
+      .vf-lane-wrapper{background:#ffffff!important;}
+      .vf-lane-fade-left{background:linear-gradient(to right,#ffffff,transparent)!important;}
+      .vf-lane-fade-right{background:linear-gradient(to left,#ffffff,transparent)!important;}
+      .vf-lane-divider{border-top-color:#ede8e0!important;margin:4px 16px 28px!important;}
 
-      /* Price slider box — lighter, less heavy on mobile */
-      .vf-lane-slider{
-        background:#f5f0e8!important;
-        box-shadow:0 1px 6px rgba(0,0,0,0.06)!important;
-        border:1px solid #e8ddd0!important;
-        min-width:unset!important;
-        width:100%!important;
-        border-radius:10px!important;
-        padding:8px 14px!important;
-      }
-
-      /* Lane header — stack on mobile so slider goes below category title */
+      /* Price slider — clean on mobile */
       .vf-lane-header{
         flex-direction:column!important;
         align-items:flex-start!important;
@@ -2983,7 +2984,7 @@ function GlobalStyles(){return(
       .vf-results-header{padding:0 16px 14px!important;}
       .vf-results-title{font-size:1.5rem!important;}
 
-      /* Customer dashboard — full width on mobile, no sidebar layout shift */
+      /* Customer dashboard */
       .vf-customer-dash-body{min-height:100vh!important;}
 
       /* Vendor detail */

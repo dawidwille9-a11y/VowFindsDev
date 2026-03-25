@@ -375,7 +375,7 @@ function CustomerAuthModal({onLogin, onClose, redirectVendor=null}) {
         </p>
         <form onSubmit={mode==='login'?handleLogin:handleRegister}>
           {mode==='register'&&(
-            <div className="vf-lane-wrapper" style={{marginBottom:12}}>
+            <div className="vf-lane-wrapper" style={{marginBottom:12,background:'#ffffff'}}>
               <label style={labelStyle}>Your Name</label>
               <input style={{...inputStyle,marginBottom:0}} type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Jane Smith" required/>
             </div>
@@ -1353,7 +1353,7 @@ function VendorLane({type,vendors,dateFrom,dateTo,onOpenDetail,isLast,onRequestQ
   const pct=Math.round(((maxPrice-minT)/(sliderMax-minT))*100),avgPct=avgT>0?Math.round(((avgT-minT)/(sliderMax-minT))*100):0;
   const visible=allOnRequest?vendors:vendors.filter(v=>calcTotal(v)<=maxPrice);
   return (
-    <div className="vf-lane-wrapper" style={{marginBottom:12}}>
+    <div className="vf-lane-wrapper" style={{marginBottom:12,background:'#ffffff'}}>
       <div className="vf-lane-header" style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 32px',marginBottom:16,flexWrap:'wrap',gap:12}}>
         <div style={{display:'flex',alignItems:'center',gap:14}}>
           <span style={{fontSize:'1.3rem'}}>{TYPE_EMOJI[type]}</span>
@@ -1373,8 +1373,8 @@ function VendorLane({type,vendors,dateFrom,dateTo,onOpenDetail,isLast,onRequestQ
         )}
       </div>
       <div style={{position:'relative'}}>
-        <div className="vf-lane-fade-left" style={{position:'absolute',top:0,bottom:20,left:0,width:40,background:'linear-gradient(to right,#fdfaf7,transparent)',zIndex:10,pointerEvents:'none'}}/>
-        <div className="vf-lane-fade-right" style={{position:'absolute',top:0,bottom:20,right:0,width:40,background:'linear-gradient(to left,#fdfaf7,transparent)',zIndex:10,pointerEvents:'none'}}/>
+        <div className="vf-lane-fade-left" style={{position:'absolute',top:0,bottom:20,left:0,width:40,background:'linear-gradient(to right,#ffffff,transparent)',zIndex:10,pointerEvents:'none'}}/>
+        <div className="vf-lane-fade-right" style={{position:'absolute',top:0,bottom:20,right:0,width:40,background:'linear-gradient(to left,#ffffff,transparent)',zIndex:10,pointerEvents:'none'}}/>
         <div style={{display:'flex',gap:20,overflowX:'auto',padding:'4px 32px 20px',scrollbarWidth:'none'}}>
           {vendors.map(v=>{
             const ok=allOnRequest||calcTotal(v)<=maxPrice;
@@ -2483,7 +2483,7 @@ function CustomerBrowseView({user,venue,setVenue,venueLatLng,setVenueLatLng,date
 
       {/* Results */}
       {searched&&(
-        <div className="vf-results-section" style={{padding:'32px 0 60px'}}>
+        <div className="vf-results-section" style={{padding:'32px 0 60px',background:'#ffffff'}}>
           <div className="vf-results-header" style={{padding:'0 28px 20px',maxWidth:1200,margin:'0 auto',display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
             <div>
               <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.8rem',fontWeight:400,color:'var(--forest)'}}>Vendors near <span style={{fontStyle:'italic',color:'var(--rose)'}}>{venue}</span>{dateFrom&&<span style={{fontSize:'1.1rem',color:'var(--mid)',fontStyle:'normal'}}> · {formatDateDisplay(dateFrom)}{dateTo&&dateTo!==dateFrom?' – '+formatDateDisplay(dateTo):''}</span>}</h2>
@@ -2856,7 +2856,7 @@ export default function VowFinds() {
 
           {/* Results */}
           {searched&&(
-            <div className="vf-results-section" style={{padding:'48px 0 60px'}}>
+            <div className="vf-results-section" style={{padding:'48px 0 60px',background:'#ffffff'}}>
               <div style={{padding:'0 32px 24px',maxWidth:1200,margin:'0 auto',display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
                 <div>
                   <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'2rem',fontWeight:400,color:'var(--forest)'}}>Vendors near <span style={{fontStyle:'italic',color:'var(--rose)'}}>{venue}</span>{dateFrom&&<span style={{fontSize:'1.2rem',color:'var(--mid)',fontStyle:'normal'}}> · {formatDateDisplay(dateFrom)}{dateTo&&dateTo!==dateFrom?' – '+formatDateDisplay(dateTo):''}</span>}</h2>

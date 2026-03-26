@@ -1,6 +1,7 @@
 // VowFinds – Supabase + Google Maps + Auth
 
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
+import { Analytics } from '@vercel/analytics/react';
 // ── MOBILE DETECTION ─────────────────────────────────────────────────────────
 function useIsMobile() {
   const [mobile, setMobile] = React.useState(() => window.innerWidth < 768); // 768px = mobile threshold
@@ -4064,6 +4065,7 @@ function MobileApp({user,onLogin,onLogout,requestQuote,quoteVendor,setQuoteVendo
     <div style={{position:'fixed',inset:0,zIndex:600,background:'#fff',display:'flex',flexDirection:'column'}}>
       <MobileVendorDetail vendor={activeVendor} dateFrom={dateFrom} venueLabel={venue} venueLatLng={venueLL}
         onBack={()=>setActiveVendor(null)} onQuote={()=>{handleRequestQuote(activeVendor);setActiveVendor(null);}}/>
+      <Analytics />
     </div>
   );
 
@@ -4163,6 +4165,7 @@ function MobileApp({user,onLogin,onLogout,requestQuote,quoteVendor,setQuoteVendo
           </div>
         )}
       </div>
+      <Analytics />
     </div>
   );
 }
@@ -4217,6 +4220,7 @@ export default function VowFinds() {
         <span style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.6)'}}>Admin Panel</span>
       </nav>
       <AdminDashboard onLogout={handleLogout}/>
+      <Analytics />
     </>
   );
 
@@ -4228,6 +4232,7 @@ export default function VowFinds() {
         <span style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.6)'}}>Vendor Portal</span>
       </nav>
       <VendorDashboard user={user} onLogout={handleLogout}/>
+      <Analytics />
     </>
   );
 
@@ -4371,6 +4376,7 @@ export default function VowFinds() {
             )}
           </div>
         )}
+      <Analytics />
       </>
     );
   }
@@ -4619,6 +4625,7 @@ export default function VowFinds() {
           )}
         </div>
       )}
+      <Analytics />
     </>
   );
 }
